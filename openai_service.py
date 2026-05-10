@@ -19,33 +19,43 @@ class OpenAIService:
         context_lines = []
 
         for d in documents:
-            planogram = d.get("planogram_info", {})
+            line = f"""
+                    Product ID: {d.get('id')}
+                    Name: {d.get('name')}
+                    Brand: {d.get('brand')}
+                    Category: {d.get('category')}
+                    Description: {d.get('description')}
+                    Price: ₹{d.get('price')}
+                    Discounted Price: ₹{d.get('discounted_price')}
+                    Veg: {"Yes" if d.get('veg') else "No"}
+                    Nutrition: {d.get('nutrition')}
+                    """
+            context_lines.append(line.strip())
 
-            context_lines.append(
-                f"{d.get('product_name', 'N/A')} - "
-                f"{d.get('description', 'N/A')} - "
-                f"Aisle:{planogram.get('aisle', 'N/A')} "
-                f"Shelf:{planogram.get('shelf', 'N/A')}"
-            )
-
-        return "\n".join(context_lines)
+        return "\n\n".join(context_lines)
 
     # ✅ Generate prompt
     def build_prompt(self, query: str, context: str) -> str:
-        return f"""
-You are a retail assistant helping with planogram navigation.
+        prompt = f"""
+            You are a retail shopping assistant helping customers with product details such as price, offers, availability, and nutritional information. 
+            You will receive product information from a vector database.
 
-Context:
-{context}
+            Context:
+            {context}
 
-User Query:
-{query}
+            User Query:
+            {query}
 
-Instructions:
-- Answer ONLY from the context
-- If not found, say "Product not found in store"
-- Be concise and clear
-"""
+            Instructions:
+            - Answer ONLY using the provided context
+            - Do not make up any information
+            - If the product is not found, respond with: "Product not found in store"
+            - Provide clear, concise, and helpful answers
+            - Include relevant details such as price, discounts, veg/non-veg status, and nutrition when available
+            """
+
+
+        return prompt
 
     # ✅ Main RAG method
     def generate_answer(self, query: str, context_docs: list) -> str:

@@ -1,0 +1,167 @@
+[
+  {
+    "id": "PROMO_NISSIN_WK",
+    "Promotion_Name": "Nissin Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Nissin",
+    "Discount_Percentage": 5,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_AACHI_WK",
+    "Promotion_Name": "Aachi Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Aachi",
+    "Discount_Percentage": 10,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_MAGGI_WK",
+    "Promotion_Name": "Maggi Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Maggi",
+    "Discount_Percentage": 5,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_SUNFEAST_YIPPEE_WK",
+    "Promotion_Name": "Sunfeast Yippee Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Sunfeast Yippee",
+    "Discount_Percentage": 5,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_KNORR_WK",
+    "Promotion_Name": "Knorr Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Knorr",
+    "Discount_Percentage": 5,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_AMUL_WK",
+    "Promotion_Name": "Amul Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Amul",
+    "Discount_Percentage": 8,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_HORLICKS_WK",
+    "Promotion_Name": "Horlicks Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Horlicks",
+    "Discount_Percentage": 7,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_CADBURY_BOURNVITA_WK",
+    "Promotion_Name": "Cadbury Bournvita Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Cadbury Bournvita",
+    "Discount_Percentage": 6,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_PRINGLES_WK",
+    "Promotion_Name": "Pringles Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Pringles",
+    "Discount_Percentage": 8,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_LAY'S_WK",
+    "Promotion_Name": "Lay's Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Lay's",
+    "Discount_Percentage": 8,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_HAPPILO_WK",
+    "Promotion_Name": "Happilo Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Happilo",
+    "Discount_Percentage": 6,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_TRUE_ELEMENTS_WK",
+    "Promotion_Name": "True Elements Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "True Elements",
+    "Discount_Percentage": 8,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_KELLOGG'S_WK",
+    "Promotion_Name": "Kellogg's Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Kellogg's",
+    "Discount_Percentage": 9,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_BOOMER_WK",
+    "Promotion_Name": "Boomer Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Boomer",
+    "Discount_Percentage": 6,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  },
+  {
+    "id": "PROMO_CENTERFRUIT_WK",
+    "Promotion_Name": "Centerfruit Brand Fest",
+    "Scope_Type": "Brand",
+    "Scope_Value": "Centerfruit",
+    "Discount_Percentage": 9,
+    "isPromotion": true,
+    "Start_Date": "2026-04-20",
+    "End_Date": "2026-04-27",
+    "Priority": 1
+  }
+]

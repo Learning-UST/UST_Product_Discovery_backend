@@ -3,6 +3,8 @@ from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import *
 from azure.core.credentials import AzureKeyCredential
 
+import json
+
 from config import get_config_value
 
 
@@ -34,34 +36,25 @@ class AiSearch:
             SimpleField(name="id", type=SearchFieldDataType.String, key=True),
 
             # Product info
-            SearchableField(name="product_name", type=SearchFieldDataType.String),
+            SearchableField(name="name", type=SearchFieldDataType.String),
+            SearchableField(name="brand", type=SearchFieldDataType.String),
             SearchableField(name="category", type=SearchFieldDataType.String),
             SearchableField(name="description", type=SearchFieldDataType.String),
 
-            # Filterable fields
-            SimpleField(
-                name="price",
-                type=SearchFieldDataType.Double,
-                filterable=True,
-                sortable=True
-            ),
+            # Pricing
+            SimpleField(name="price", type=SearchFieldDataType.Double, filterable=True, sortable=True),
+            SimpleField(name="discounted_price", type=SearchFieldDataType.Double, filterable=True, sortable=True),
 
-            # Ingredients
-            SearchField(
-                name="ingredients",
-                type=SearchFieldDataType.Collection(SearchFieldDataType.String),
-                searchable=True
-            ),
+            # Inventory
+            SimpleField(name="stock", type=SearchFieldDataType.Int32, filterable=True),
+            SimpleField(name="store_id", type=SearchFieldDataType.String, filterable=True),
 
-            # Planogram
-            ComplexField(
-                name="planogram_info",
-                fields=[
-                    SimpleField(name="aisle", type=SearchFieldDataType.String, filterable=True),
-                    SimpleField(name="shelf", type=SearchFieldDataType.String, filterable=True),
-                    SimpleField(name="position", type=SearchFieldDataType.String),
-                ]
-            ),
+            # Promotion
+            SearchableField(name="promotion_name", type=SearchFieldDataType.String),
+
+            # ✅ Metadata fields
+            SimpleField(name="veg", type=SearchFieldDataType.Boolean, filterable=True),
+            SearchableField(name="nutrition", type=SearchFieldDataType.String),
 
             # ✅ Vector field
             SearchField(
@@ -100,7 +93,6 @@ class AiSearch:
             search_text=query,
             top=top_k
         )
-
         return [self._format_result(r) for r in results]
 
     # ✅ Vector Search
@@ -113,10 +105,9 @@ class AiSearch:
                 "k": top_k
             }]
         )
-
         return [self._format_result(r) for r in results]
 
-    # ✅ Hybrid Search (BEST for production)
+    # ✅ Hybrid Search
     def hybrid_search(self, query, embedding, top_k=5):
         results = self.search_client.search(
             search_text=query,
@@ -127,27 +118,78 @@ class AiSearch:
             }],
             top=top_k
         )
-
         return [self._format_result(r) for r in results]
 
-    # ✅ Optional filter search
+    # ✅ Filter Search
     def filtered_search(self, query, filter_expr, top_k=5):
         results = self.search_client.search(
             search_text=query,
             filter=filter_expr,
             top=top_k
         )
-
         return [self._format_result(r) for r in results]
 
-    # ✅ Standard response formatter
+    # ✅ Read JSON file (combined_output.json)
+    def read_json(self, file_path="combined_output.json"):
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        # Flatten metadata fields
+        formatted_data = []
+        for item in data:
+            formatted_data.append({
+                "id": item.get("id"),
+                "name": item.get("name"),
+                "brand": item.get("brand"),
+                "category": item.get("category"),
+                "description": item.get("description"),
+                "price": item.get("price"),
+                "discounted_price": item.get("discounted_price"),
+                "stock": item.get("stock"),
+                "store_id": item.get("store_id"),
+                "promotion_name": item.get("promotion"),
+
+                # ✅ Flatten metadata
+                "veg": item.get("metadata", {}).get("veg", False),
+                "nutrition": item.get("metadata", {}).get("nutrition", "")
+            })
+
+        return formatted_data
+
+    # ✅ Insert documents into Azure AI Search
+    def insert(self, docs):
+        try:
+            result = self.search_client.upload_documents(documents=docs)
+
+            print(f"✅ Uploaded {len(docs)} documents successfully!")
+            
+            # Optional: return detailed result
+            return result
+
+        except Exception as e:
+            print(f"❌ Error uploading documents: {str(e)}")
+            return None
+
+    # ✅ Result Formatter
     def _format_result(self, r):
         return {
             "id": r.get("id"),
-            "product_name": r.get("product_name"),
+            "name": r.get("name"),
+            "brand": r.get("brand"),
             "category": r.get("category"),
             "description": r.get("description"),
             "price": r.get("price"),
-            "ingredients": r.get("ingredients"),
-            "planogram_info": r.get("planogram_info")
+            "discounted_price": r.get("discounted_price"),
+            "veg": r.get("veg"),
+            "nutrition": r.get("nutrition")
         }
+
+
+if __name__  =="__main__":
+    search=AiSearch()
+    # data=search.read_json()
+    # # print(data)
+    # search.create_index()
+    # search.insert(data)
+    # result=search.search_text("Instant soup")
+    # print(result)

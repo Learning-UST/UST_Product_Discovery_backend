@@ -1,16 +1,9 @@
 import json
 from datetime import datetime,timezone
 
-
-with open("inventory.json") as f:
-    content = f.read()
-    data=json.loads(content)
-    print(data)
-
-exit()
 # ---------- Load JSON files ----------
 def load_json(file_path):
-    with open(file_path, "r") as f:
+    with open(file_path, "r", encoding="utf-8-sig") as f:
         return json.load(f)
 
 promotions = load_json("promotion.json")

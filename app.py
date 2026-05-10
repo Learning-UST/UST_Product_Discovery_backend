@@ -33,7 +33,6 @@ def chat():
 
     # embedding = get_embedding(query)
     docs = ai_search.search_text(query, top_k=3)
-
     answer = openai_service.generate_answer(query, docs)
 
     return jsonify({
