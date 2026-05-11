@@ -18,6 +18,14 @@ class CosmosService:
         inventory = self.inv_ctr.read_item(item=f"INV_{upc_str}", partition_key=upc_str)
         return {"product": product, "inventory": inventory}
 
+    def get_all_products(self):
+        """Fetch all product documents from the products container."""
+        query = "SELECT * FROM c"
+        return list(self.prod_ctr.query_items(
+            query=query,
+            enable_cross_partition_query=True
+        ))
+
     def get_shelf_layout(self, shelf_id):
         """Tool for Agent: Digital Twin lookup"""
         return self.lay_ctr.read_item(item=str(shelf_id), partition_key=int(shelf_id))

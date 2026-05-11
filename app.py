@@ -4,6 +4,7 @@ from openai_service import OpenAIService
 from embeddings import get_embedding
 from voice_service import transcribe_audio
 from agent_service import RetailAgentManager
+from cosmos_service import CosmosService
 from flask_cors import CORS
 
 import qrcode
@@ -142,6 +143,25 @@ def get_direct_product(upc):
             "message": "Product not found or data incomplete",
             "error": str(e)
         }), 404
+
+
+@app.route("/api/products", methods=["GET"])
+def get_all_products():
+    """Returns all products from the products Cosmos DB container."""
+    cosmos = CosmosService()
+    try:
+        products = cosmos.get_all_products()
+        return jsonify({
+            "status": "success",
+            "count": len(products),
+            "data": products
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Unable to fetch products",
+            "error": str(e)
+        }), 500
 
 @app.route("/generate-shelf-qr/<shelf_id>", methods=["GET"])
 def get_shelf_qr(shelf_id):
