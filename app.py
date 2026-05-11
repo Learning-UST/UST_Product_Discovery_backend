@@ -112,8 +112,6 @@ def agent_query():
         "answer": answer
     })
 
-
-
 @app.route("/get-shelf-twin/<shelf_id>", methods=["GET"])
 def get_shelf_twin(shelf_id):
     layout = cosmos.get_shelf_layout(shelf_id)
