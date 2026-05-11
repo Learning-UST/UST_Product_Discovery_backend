@@ -2,6 +2,27 @@ from openai import OpenAI
 from config import get_config_value
 import json
 
+
+SYSTEM_PROMPT = """
+You are a retail shopping assistant that provides accurate product information based ONLY on the given context.
+
+Rules:
+- Use strictly the provided context to answer the question.
+- Do NOT invent or assume any information not present in the context.
+- Be concise, clear, and helpful.
+
+Response Guidelines:
+- Always include relevant details when available:
+  • Product Name
+  • Brand
+  • Price and Discounted Price
+  • Veg / Non-Veg status
+  • Nutrition (if present)
+- Format the response in a readable way using bullet points or short paragraphs.
+- If multiple products match, list each separately.
+"""
+
+
 class OpenAIService:
 
     def __init__(self):
@@ -13,20 +34,6 @@ class OpenAIService:
             base_url=f"{self.endpoint}/openai/v1",
             api_key=self.api_key
         )
-
-    # def get_master_prompt(self):
-    #     return """
-    #     You are an Intelligent Retail Orchestrator. You help customers find products and check store information.
-        
-    #     You have access to tools:
-    #     1. 'search_products': Use this for general queries like 'healthy snacks' or 'vegan options'.
-    #     2. 'get_product_details': Use this when a user asks about a SPECIFIC product's price, stock, or ingredients.
-    #     3. 'get_shelf_layout': Use this when a user asks 'Where is this item?' or 'Show me this shelf'.
-        
-    #     Rules:
-    #     - If the user's intent is unclear, ask for clarification.
-    #     - Always check inventory before confirming a product is available.
-    #     """
 
     def get_master_prompt(self):
         return """
@@ -170,41 +177,30 @@ class OpenAIService:
         return "\n\n".join(context_lines)
 
     # ✅ Generate prompt
-    def build_prompt(self, query: str, context: str) -> str:
-        prompt = f"""
-            You are a retail shopping assistant helping customers with product details such as price, offers, availability, and nutritional information. 
-            You will receive product information from a vector database.
 
+    def build_prompt(self, query: str, context: str) -> str:
+        return f"""
             Context:
             {context}
 
-            User Query:
+            User Question:
             {query}
 
-            Instructions:
-            - Answer ONLY using the provided context
-            - Do not make up any information
-            - If the product is not found, respond with: "Product not found in store"
-            - Provide clear, concise, and helpful answers
-            - Include relevant details such as price, discounts, veg/non-veg status, and nutrition when available
+            Answer:
             """
-
-
-        return prompt
 
     # ✅ Main RAG method
     def generate_answer(self, query: str, context_docs: list) -> str:
         context_text = self.build_context(context_docs)
         prompt = self.build_prompt(query, context_text)
-
         response = self.client.chat.completions.create(
             model=self.deployment,
             messages=[
-                {"role": "system", "content": "You are a helpful retail assistant."},
+                {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.2  # ✅ stable production response
         )
 
         return response.choices[0].message.content
-        
+

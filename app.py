@@ -17,6 +17,7 @@ CORS(app)
 ai_search = AiSearch()
 openai_service = OpenAIService()
 agent_manager = RetailAgentManager()
+cosmos = CosmosService()
 
 # ✅ Vector Search Endpoint
 @app.route("/search", methods=["POST"])
@@ -92,7 +93,6 @@ def voice_query():
 @app.route("/product-click/<upc>", methods=["GET"])
 def handle_click(upc):
     """Instant retrieval endpoint for the Digital Twin clicks"""
-    cosmos = CosmosService()
     try:
         details = cosmos.get_enriched_product_info(upc)
         return jsonify(details)
@@ -116,7 +116,6 @@ def agent_query():
 
 @app.route("/get-shelf-twin/<shelf_id>", methods=["GET"])
 def get_shelf_twin(shelf_id):
-    cosmos = CosmosService()
     layout = cosmos.get_shelf_layout(shelf_id)
     # This layout contains the 'rows' and 'products' your React grid needs
     return jsonify(layout)
@@ -127,7 +126,6 @@ def get_direct_product(upc):
     FAST PATH: Called when a user selects a product on the Digital Twin.
     Returns metadata + current stock + calculated final price instantly.
     """
-    cosmos = CosmosService()
     try:
         # This uses the 'enriched' method we built in CosmosService
         # It handles: 1. Metadata 2. Inventory 3. Promotion Logic
@@ -148,7 +146,6 @@ def get_direct_product(upc):
 @app.route("/api/products", methods=["GET"])
 def get_all_products():
     """Returns all products from the products Cosmos DB container."""
-    cosmos = CosmosService()
     try:
         products = cosmos.get_all_products()
         return jsonify({
@@ -171,7 +168,6 @@ def get_shelf_qr(shelf_id):
     """
     try:
         # 1. Verify shelf exists in Cosmos (Optional but good for data integrity)
-        cosmos = CosmosService()
         layout = cosmos.get_shelf_layout(shelf_id)
         
         # 2. Generate QR Data
