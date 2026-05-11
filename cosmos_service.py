@@ -3,8 +3,22 @@ from config import get_config_value
 
 class CosmosService:
     def __init__(self):
-        self.client = CosmosClient(get_config_value("COSMOS_ENDPOINT"), get_config_value("COSMOS_KEY"))
-        self.db = self.client.get_database_client(get_config_value("COSMOS_DB_NAME"))
+        endpoint = get_config_value("COSMOS_ENDPOINT") or get_config_value("AZURE_COSMOS_ENDPOINT")
+        key = get_config_value("COSMOS_KEY") or get_config_value("AZURE_COSMOS_KEY")
+        db_name = get_config_value("COSMOS_DB_NAME") or get_config_value("AZURE_COSMOS_DB_NAME")
+
+        missing = []
+        if not endpoint:
+            missing.append("COSMOS_ENDPOINT or AZURE_COSMOS_ENDPOINT")
+        if not key:
+            missing.append("COSMOS_KEY or AZURE_COSMOS_KEY")
+        if not db_name:
+            missing.append("COSMOS_DB_NAME or AZURE_COSMOS_DB_NAME")
+        if missing:
+            raise ValueError(f"Missing Cosmos configuration: {', '.join(missing)}")
+
+        self.client = CosmosClient(endpoint, key)
+        self.db = self.client.get_database_client(db_name)
         self.prod_ctr = self.db.get_container_client("products")
         self.inv_ctr = self.db.get_container_client("inventory")
         self.promo_ctr = self.db.get_container_client("promotion")
