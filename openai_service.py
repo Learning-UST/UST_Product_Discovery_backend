@@ -1,6 +1,9 @@
 from openai import OpenAI
 from config import get_config_value
 import json
+from logger import get_logger
+
+logger = get_logger()
 
 
 SYSTEM_PROMPT = """
@@ -10,16 +13,6 @@ Rules:
 - Use strictly the provided context to answer the question.
 - Do NOT invent or assume any information not present in the context.
 - Be concise, clear, and helpful.
-
-Response Guidelines:
-- Always include relevant details when available:
-  • Product Name
-  • Brand
-  • Price and Discounted Price
-  • Veg / Non-Veg status
-  • Nutrition (if present)
-- Format the response in a readable way using bullet points or short paragraphs.
-- If multiple products match, list each separately.
 """
 
 
@@ -34,6 +27,8 @@ class OpenAIService:
             base_url=f"{self.endpoint}/openai/v1",
             api_key=self.api_key
         )
+
+        logger.info("OpenAI initialized...")
 
     def get_master_prompt(self):
         return """
@@ -193,6 +188,7 @@ class OpenAIService:
     def generate_answer(self, query: str, context_docs: list) -> str:
         context_text = self.build_context(context_docs)
         prompt = self.build_prompt(query, context_text)
+        logger.info(f"Final Prompt: {prompt}")
         response = self.client.chat.completions.create(
             model=self.deployment,
             messages=[
@@ -201,6 +197,7 @@ class OpenAIService:
             ],
             temperature=0.2  # ✅ stable production response
         )
-
-        return response.choices[0].message.content
+        asssitant_response = response.choices[0].message.content
+        logger.info(f"Assitant Response: {asssitant_response}")
+        return asssitant_response
 
