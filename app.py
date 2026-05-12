@@ -6,10 +6,16 @@ from voice_service import transcribe_audio
 from agent_service import RetailAgentManager
 from cosmos_service import CosmosService
 from flask_cors import CORS
+from config import get_config_value
+import string
+
+def _clean_query(q):
+    return q.strip().rstrip(string.punctuation).strip() if q else q
 
 import qrcode
 import io
 import base64
+import requests as http_requests
 from flask import send_file
 app = Flask(__name__)
 CORS(app)
@@ -23,7 +29,7 @@ cosmos = CosmosService()
 @app.route("/search", methods=["POST"])
 def search():
     data = request.json
-    query = data.get("query")
+    query = _clean_query(data.get("query"))
 
     # embedding = get_embedding(query)
     results = ai_search.search_text(query, top_k=3)
@@ -52,21 +58,20 @@ def chat():
 
 @app.route("/speech-to-text", methods=["POST"])
 def stt():
-    # This logic usually lives on the frontend for better latency, 
-    # but for the backend, you can provide a token endpoint.
-    speech_config = speechsdk.SpeechConfig(
-        subscription=get_config_value("AZURE_SPEECH_KEY"), 
-        region=get_config_value("AZURE_SPEECH_REGION")
-    )
-    # Return a temporary token for the React frontend to use the SDK directly
-    return jsonify({"token": "...", "region": "..."})
+    # Delegate to the token endpoint — frontend uses the key/region with the SDK directly
+    return get_speech_token()
 
 @app.route("/get-speech-token", methods=["GET"])
 def get_speech_token():
-    # Simple endpoint to pass credentials to React
+    key = get_config_value("AZURE_SPEECH_KEY")
+    region = get_config_value("AZURE_SPEECH_REGION")
+    token_url = f"https://{region}.api.cognitive.microsoft.com/sts/v1.0/issueToken"
+    resp = http_requests.post(token_url, headers={"Ocp-Apim-Subscription-Key": key}, verify=False)
+    if resp.status_code != 200:
+        return jsonify({"error": "Failed to fetch speech token"}), 502
     return jsonify({
-        "key": get_config_value("AZURE_SPEECH_KEY"),
-        "region": get_config_value("AZURE_SPEECH_REGION")
+        "token": resp.text,
+        "region": region
     })
 
 
@@ -102,7 +107,7 @@ def handle_click(upc):
 @app.route("/agent-query", methods=["POST"])
 def agent_query():
     data = request.json
-    query = data.get("query")
+    query = _clean_query(data.get("query"))
     
     # This now calls the logic where the AI DECIDES which tool to use
     answer = openai_service.generate_agentic_answer(query)
