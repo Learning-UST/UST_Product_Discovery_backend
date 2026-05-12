@@ -17,6 +17,8 @@ import io
 import base64
 import requests as http_requests
 from flask import send_file
+
+
 app = Flask(__name__)
 CORS(app)
 # ✅ Initialize services (once)
@@ -145,6 +147,27 @@ def get_direct_product(upc):
             "error": str(e)
         }), 404
 
+@app.route("/generate-qr/<shelf_id>", methods=["GET"])
+def generate_qr(shelf_id):
+    # This is the URL your phone will open. 
+    # Change '192.168.x.x' to your computer's local IP address 
+    # so your mobile phone can access your local React server.
+    frontend_base_url = "http://20.63.27.178:5173" 
+    full_url = f"{frontend_base_url}/?shelfId={shelf_id}"
+    
+    # Generate the QR Code
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(full_url)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Save image to a memory buffer to send it via Flask
+    img_io = io.BytesIO()
+    img.save(img_io, 'PNG')
+    img_io.seek(0)
+    
+    return send_file(img_io, mimetype='image/png')
 
 @app.route("/api/products", methods=["GET"])
 def get_all_products():
