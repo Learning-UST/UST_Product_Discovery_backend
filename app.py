@@ -20,7 +20,8 @@ from flask import send_file
 
 
 app = Flask(__name__)
-CORS(app)
+# This allows your Public IP to make requests to the Flask API
+CORS(app, resources={r"/*": {"origins": ["http://20.63.27.178", "http://localhost:5173"]}})
 # ✅ Initialize services (once)
 ai_search = AiSearch()
 openai_service = OpenAIService()
@@ -125,7 +126,7 @@ def get_shelf_twin(shelf_id):
     # This layout contains the 'rows' and 'products' your React grid needs
     return jsonify(layout)
 
-@app.route("/api/product/direct/<upc>", methods=["GET"])
+@app.route("/product/direct/<upc>", methods=["GET"])
 def get_direct_product(upc):
     """
     FAST PATH: Called when a user selects a product on the Digital Twin.
@@ -152,7 +153,7 @@ def generate_qr(shelf_id):
     # This is the URL your phone will open. 
     # Change '192.168.x.x' to your computer's local IP address 
     # so your mobile phone can access your local React server.
-    frontend_base_url = "http://20.63.27.178:5173" 
+    frontend_base_url = "http://20.63.27.178" 
     full_url = f"{frontend_base_url}/?shelfId={shelf_id}"
     
     # Generate the QR Code
@@ -169,7 +170,7 @@ def generate_qr(shelf_id):
     
     return send_file(img_io, mimetype='image/png')
 
-@app.route("/api/products", methods=["GET"])
+@app.route("/products", methods=["GET"])
 def get_all_products():
     """Returns all products from the products Cosmos DB container."""
     try:
