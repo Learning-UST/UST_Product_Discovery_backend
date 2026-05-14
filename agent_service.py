@@ -1,68 +1,41 @@
-# from azure.ai.projects import AIProjectClient
-# from azure.identity import DefaultAzureCredential
-# from config import get_config_value
+from agent.retriever import Retriever
+from agent.prompt import build_context, build_prompt,format_history, SYSTEM_PROMPT
+from agent.llm_service import LLMService
+from agent.query_rewriter import QueryRewriter
+from logger import get_logger
 
-# class RetailAgentManager:
-#     def __init__(self):
-#         conn_str = get_config_value("AZURE_PROJECT_CONNECTION_STRING")
-        
-#         if not conn_str:
-#             # Fallback if your teammate only gave you the endpoint
-#             endpoint = get_config_value("AZURE_PROJECT_ENDPOINT")
-#             if not endpoint:
-#                 raise ValueError("Please set AZURE_PROJECT_CONNECTION_STRING in your .env file. "
-#                                  "You can find this in the Azure AI Foundry Project Overview.")
-            
-#             # If using only endpoint, you'll need more manual config, 
-#             # so the Connection String is highly recommended.
-#             self.project_client = AIProjectClient(
-#                 endpoint=endpoint,
-#                 credential=DefaultAzureCredential(),
-#                 subscription_id=get_config_value("AZURE_SUBSCRIPTION_ID"),
-#                 resource_group_name=get_config_value("AZURE_RESOURCE_GROUP")
-#             )
-#         else:
-#             # BEST WAY: Uses the connection string directly
-#             self.project_client = AIProjectClient.from_connection_string(
-#                 conn_str=conn_str,
-#                 credential=DefaultAzureCredential()
-#             )
+logger = get_logger()
 
-from azure.identity import DefaultAzureCredential
-from azure.ai.projects import AIProjectClient
-from config import get_config_value
 
-class RetailAgentManager:
+class ShoppingAgent:
+
     def __init__(self):
-        # Use environment variable for endpoint
-        project_endpoint = get_config_value("AZURE_PROJECT_ENDPOINT")
-        if not project_endpoint or "your-project-endpoint" in str(project_endpoint):
-            raise ValueError("AZURE_PROJECT_ENDPOINT is missing or still a placeholder")
-        self.project_client = AIProjectClient(
-            endpoint=project_endpoint,
-            credential=DefaultAzureCredential()
-        )
-        
-        print("✅ Azure AI Project Client initialized successfully.")
+        self.retriever = Retriever()
+        self.llm = LLMService()
+        self.rewriter = QueryRewriter()   # ✅ NEW
 
-    def create_retail_assistant(self):
-        # Use the deployment name for the model you have in Foundry (e.g., 'gpt-4o')
-        model_deployment = get_config_value("AZURE_OPENAI_DEPLOYMENT")
-        
-        agent = self.project_client.agents.create_agent(
-            model=model_deployment,
-            name="Retail-Assistant",
-            instructions="You are a smart retail assistant. Help users find products and check stock.",
-            # This is where we will attach the Cosmos DB and Search tools next
-        )
-        return agent
-        
-    def create_retail_agent(self):
-        # This creates a persistent agent in Azure that knows how to use your Search index
-        agent = self.project_client.agents.create_agent(
-            model=get_config_value("AZURE_OPENAI_DEPLOYMENT"),
-            name="Retail-Assistant-Agent",
-            instructions="You are a retail expert. Use the provided tools to check inventory and find product locations.",
-            tools=[{"type": "azure_ai_search", "connection_id": get_config_value("AZURE_SEARCH_CONNECTION_ID") }]
-        )
-        return agent
+    def ask(self, query: str,history: list) :
+
+
+        # ✅ Step 1: Get formatted history
+        history = format_history(history)
+
+        # ✅ Step 2: Rewrite query using history
+        rewritten_query = self.rewriter.rewrite(query, history)
+
+        logger.info(f"Original Query: {query}")
+        logger.info(f"Rewritten Query: {rewritten_query}")
+
+        # ✅ Step 3: Retrieve using rewritten query
+        docs = self.retriever.retrieve(rewritten_query)
+
+        # ✅ Step 4: Build context
+        context = build_context(docs)
+
+        # ✅ Step 5: Build final prompt (use ORIGINAL query for answering)
+        prompt = build_prompt(query, history, context)
+
+        # ✅ Step 6: Generate answer
+        response = self.llm.generate(SYSTEM_PROMPT, prompt)
+
+        return response , docs

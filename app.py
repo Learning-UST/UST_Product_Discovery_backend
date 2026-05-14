@@ -1,14 +1,15 @@
 from flask import Flask, request, jsonify
 from search_service import AiSearch
 from openai_service import OpenAIService
+from agent_service import ShoppingAgent
 from embeddings import get_embedding
 from voice_service import transcribe_audio
-from agent_service import RetailAgentManager
 from cosmos_service import CosmosService
 from flask_cors import CORS
 from config import get_config_value
 import string
 import os
+from logger import get_logger
 
 def _clean_query(q):
     return q.strip().rstrip(string.punctuation).strip() if q else q
@@ -19,7 +20,7 @@ import base64
 import requests as http_requests
 from flask import send_file
 
-
+logger=get_logger()
 app = Flask(__name__)
 
 cors_origins = get_config_value("CORS_ALLOWED_ORIGINS", "*")
@@ -29,9 +30,10 @@ CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
 # ✅ Initialize services (once)
 ai_search = AiSearch()
+agent=ShoppingAgent()
 openai_service = OpenAIService()
 try:
-    agent_manager = RetailAgentManager()
+    agent_manager = ShoppingAgent()
 except Exception:
     agent_manager = None
 cosmos = CosmosService()
@@ -54,11 +56,12 @@ def search():
 def chat():
     data = request.json
     query = data.get("query")
-
+    history = data.get("messages")
+    print(query,history)
     # embedding = get_embedding(query)
-    docs = ai_search.search_text(query, top_k=3)
-    answer = openai_service.generate_answer(query, docs)
-
+    # docs = ai_search.search_text(query, top_k=3)
+    # answer = openai_service.generate_answer(query, history, docs)
+    answer,docs = agent.ask(query=query,history=history)
     return jsonify({
         "query": query,
         "answer": answer,
