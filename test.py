@@ -4,7 +4,7 @@ import json
 BASE_URL = "http://127.0.0.1:5000"
 
 def test_search():
-    url = f"{BASE_URL}/search"
+    url = f"{BASE_URL}/api/search"
     payload = {
         "query": "Soup"
     }
@@ -17,7 +17,7 @@ def test_search():
 
 
 def test_chat():
-    url = f"{BASE_URL}/chat"
+    url = f"{BASE_URL}/api/chat"
     payload = {
         "query": "Knorr Mexican Tomato Corn Soup nutritions?"
     }

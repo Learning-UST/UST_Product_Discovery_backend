@@ -34,10 +34,9 @@ def get_logger(name: str = "tire_ai") -> logging.Logger:
         return logger
     
     # If logging is enabled, proceed with file handler
-    log_dir = config.get_config_value("LOG_FILE_DIR")
-    log_prefix = config.get_config_value("LOG_FILE_PREFIX")
+    log_dir = config.get_config_value("LOG_FILE_DIR") or "logs"
+    log_prefix = config.get_config_value("LOG_FILE_PREFIX") or "planogram"
     os.makedirs(log_dir, exist_ok=True)
-    
     # Use date-based filename (no rotation needed - new file each day)
     log_filename = os.path.join(
         log_dir, f"{log_prefix}_{datetime.now().strftime('%Y-%m-%d')}.log"

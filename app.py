@@ -8,6 +8,7 @@ from cosmos_service import CosmosService
 from flask_cors import CORS
 from config import get_config_value
 import string
+import os
 
 def _clean_query(q):
     return q.strip().rstrip(string.punctuation).strip() if q else q
@@ -20,16 +21,22 @@ from flask import send_file
 
 
 app = Flask(__name__)
-# This allows your Public IP to make requests to the Flask API
-CORS(app, resources={r"/*": {"origins": ["http://20.63.27.178", "http://localhost:5173"]}})
+
+cors_origins = get_config_value("CORS_ALLOWED_ORIGINS", "*")
+if isinstance(cors_origins, str) and "," in cors_origins:
+    cors_origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
+CORS(app, resources={r"/api/*": {"origins": cors_origins}})
+
 # ✅ Initialize services (once)
 ai_search = AiSearch()
 openai_service = OpenAIService()
-agent_manager = RetailAgentManager()
+try:
+    agent_manager = RetailAgentManager()
+except Exception:
+    agent_manager = None
 cosmos = CosmosService()
 
-# ✅ Vector Search Endpoint
-@app.route("/search", methods=["POST"])
+@app.route("/api/search", methods=["POST"])
 def search():
     data = request.json
     query = _clean_query(data.get("query"))
@@ -43,8 +50,7 @@ def search():
     })
 
 
-# ✅ RAG Chat Endpoint
-@app.route("/chat", methods=["POST"])
+@app.route("/api/chat", methods=["POST"])
 def chat():
     data = request.json
     query = data.get("query")
@@ -59,17 +65,17 @@ def chat():
         "sources": docs
     })
 
-@app.route("/speech-to-text", methods=["POST"])
+@app.route("/api/speech-to-text", methods=["POST"])
 def stt():
     # Delegate to the token endpoint — frontend uses the key/region with the SDK directly
     return get_speech_token()
 
-@app.route("/get-speech-token", methods=["GET"])
+@app.route("/api/get-speech-token", methods=["GET"])
 def get_speech_token():
     key = get_config_value("AZURE_SPEECH_KEY")
     region = get_config_value("AZURE_SPEECH_REGION")
     token_url = f"https://{region}.api.cognitive.microsoft.com/sts/v1.0/issueToken"
-    resp = http_requests.post(token_url, headers={"Ocp-Apim-Subscription-Key": key}, verify=False)
+    resp = http_requests.post(token_url, headers={"Ocp-Apim-Subscription-Key": key})
     if resp.status_code != 200:
         return jsonify({"error": "Failed to fetch speech token"}), 502
     return jsonify({
@@ -78,27 +84,33 @@ def get_speech_token():
     })
 
 
-@app.route("/voice-query", methods=["POST"])
+@app.route("/api/voice-query", methods=["POST"])
 def voice_query():
-    # 1. Receive audio and transcribe
+    if agent_manager is None:
+        return jsonify({"error": "Agent service is not configured"}), 503
+
+    import tempfile
     audio_file = request.files['audio']
-    audio_file.save("temp.wav")
-    user_text = transcribe_audio("temp.wav")
-    
+    with tempfile.NamedTemporaryFile(suffix='.wav', delete=True) as tmp:
+        audio_file.save(tmp.name)
+        user_text = transcribe_audio(tmp.name)
+
     # 2. Start Agentic Thread
-    # The Agent Service manages the 'Thread' (conversation history) automatically
     client = agent_manager.project_client
     thread = client.agents.create_thread()
     client.agents.create_message(thread_id=thread.id, role="user", content=user_text)
-    
+
     # 3. Run Agent (Agent decides to use Search or Cosmos tools)
-    run = client.agents.create_and_process_run(thread_id=thread.id, agent_id="your_agent_id")
-    
+    agent_id = get_config_value("AGENT_ID")
+    if not agent_id:
+        return jsonify({"error": "AGENT_ID is missing in configuration"}), 500
+    run = client.agents.create_and_process_run(thread_id=thread.id, agent_id=agent_id)
+
     # 4. Fetch final response
     messages = client.agents.list_messages(thread_id=thread.id)
     return jsonify({"answer": messages.data[0].content[0].text.value})
 
-@app.route("/product-click/<upc>", methods=["GET"])
+@app.route("/api/product-click/<upc>", methods=["GET"])
 def handle_click(upc):
     """Instant retrieval endpoint for the Digital Twin clicks"""
     try:
@@ -106,8 +118,7 @@ def handle_click(upc):
         return jsonify(details)
     except Exception as e:
         return jsonify({"error": "Product data incomplete", "details": str(e)}), 404
-# Change the agent_query route to use the new Agentic logic
-@app.route("/agent-query", methods=["POST"])
+@app.route("/api/agent-query", methods=["POST"])
 def agent_query():
     data = request.json
     query = _clean_query(data.get("query"))
@@ -120,13 +131,13 @@ def agent_query():
         "answer": answer
     })
 
-@app.route("/get-shelf-twin/<shelf_id>", methods=["GET"])
+@app.route("/api/get-shelf-twin/<shelf_id>", methods=["GET"])
 def get_shelf_twin(shelf_id):
     layout = cosmos.get_shelf_layout(shelf_id)
     # This layout contains the 'rows' and 'products' your React grid needs
     return jsonify(layout)
 
-@app.route("/product/direct/<upc>", methods=["GET"])
+@app.route("/api/product/direct/<upc>", methods=["GET"])
 def get_direct_product(upc):
     """
     FAST PATH: Called when a user selects a product on the Digital Twin.
@@ -148,29 +159,23 @@ def get_direct_product(upc):
             "error": str(e)
         }), 404
 
-@app.route("/generate-qr/<shelf_id>", methods=["GET"])
+@app.route("/api/generate-qr/<shelf_id>", methods=["GET"])
 def generate_qr(shelf_id):
-    # This is the URL your phone will open. 
-    # Change '192.168.x.x' to your computer's local IP address 
-    # so your mobile phone can access your local React server.
-    frontend_base_url = "http://20.63.27.178" 
+    frontend_base_url = get_config_value("FRONTEND_BASE_URL", "http://localhost:5173")
     full_url = f"{frontend_base_url}/?shelfId={shelf_id}"
-    
-    # Generate the QR Code
+
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(full_url)
     qr.make(fit=True)
-    
+
     img = qr.make_image(fill_color="black", back_color="white")
-    
-    # Save image to a memory buffer to send it via Flask
     img_io = io.BytesIO()
     img.save(img_io, 'PNG')
     img_io.seek(0)
-    
+
     return send_file(img_io, mimetype='image/png')
 
-@app.route("/products", methods=["GET"])
+@app.route("/api/products", methods=["GET"])
 def get_all_products():
     """Returns all products from the products Cosmos DB container."""
     try:
@@ -187,7 +192,7 @@ def get_all_products():
             "error": str(e)
         }), 500
 
-@app.route("/generate-shelf-qr/<shelf_id>", methods=["GET"])
+@app.route("/api/generate-shelf-qr/<shelf_id>", methods=["GET"])
 def get_shelf_qr(shelf_id):
     """
     Generates a QR code for a specific shelf.
@@ -218,4 +223,8 @@ def get_shelf_qr(shelf_id):
         return jsonify({"error": "Shelf not found", "details": str(e)}), 404
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(
+        host=get_config_value("FLASK_HOST", "127.0.0.1"),
+        port=int(get_config_value("FLASK_PORT", 5000)),
+        debug=bool(get_config_value("FLASK_DEBUG", False))
+    )

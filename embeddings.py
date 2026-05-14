@@ -8,7 +8,7 @@ _api_key = get_config_value("AZURE_OPENAI_API_KEY")
 client = OpenAI(
     base_url=f"{_endpoint}/openai/v1",
     api_key=_api_key,
-    http_client=httpx.Client(verify=False)
+    http_client=httpx.Client()
 )
 
 def get_embedding(text: str):

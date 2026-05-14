@@ -17,7 +17,7 @@ class AiSearch:
         self.index_name = get_config_value("AZURE_SEARCH_INDEX")
 
         self.credential = AzureKeyCredential(self.api_key)
-        _transport = RequestsTransport(connection_verify=False)
+        _transport = RequestsTransport()
 
         # Clients
         self.index_client = SearchIndexClient(
