@@ -18,16 +18,16 @@ class ShoppingAgent:
 
 
         # ✅ Step 1: Get formatted history
-        history = format_history(history)
+        # history = format_history(history)
 
         # ✅ Step 2: Rewrite query using history
-        rewritten_query = self.rewriter.rewrite(query, history)
+        # rewritten_query = self.rewriter.rewrite(query, history)
 
         logger.info(f"Original Query: {query}")
-        logger.info(f"Rewritten Query: {rewritten_query}")
+        # logger.info(f"Rewritten Query: {rewritten_query}")
 
         # ✅ Step 3: Retrieve using rewritten query
-        docs = self.retriever.retrieve(rewritten_query)
+        docs = self.retriever.retrieve(query)
 
         # ✅ Step 4: Build context
         context = build_context(docs)
