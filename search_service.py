@@ -2,6 +2,7 @@ from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import *
 from azure.core.credentials import AzureKeyCredential
+from azure.core.pipeline.transport import RequestsTransport
 
 import json
 
@@ -16,17 +17,20 @@ class AiSearch:
         self.index_name = get_config_value("AZURE_SEARCH_INDEX")
 
         self.credential = AzureKeyCredential(self.api_key)
+        _transport = RequestsTransport(connection_verify=False)
 
         # Clients
         self.index_client = SearchIndexClient(
             endpoint=self.endpoint,
-            credential=self.credential
+            credential=self.credential,
+            transport=_transport
         )
 
         self.search_client = SearchClient(
             endpoint=self.endpoint,
             index_name=self.index_name,
-            credential=self.credential
+            credential=self.credential,
+            transport=_transport
         )
 
     # ✅ Create Index
