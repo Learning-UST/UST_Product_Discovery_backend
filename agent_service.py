@@ -28,16 +28,16 @@
 #                 credential=DefaultAzureCredential()
 #             )
 
-import os
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
 from config import get_config_value
 
 class RetailAgentManager:
     def __init__(self):
-        # Your specific project endpoint from your snippet
-        project_endpoint = "https://planogramai.services.ai.azure.com/api/projects/proj-planogram"
-        # Initialize the Project Client directly
+        # Use environment variable for endpoint
+        project_endpoint = get_config_value("AZURE_PROJECT_ENDPOINT")
+        if not project_endpoint or "your-project-endpoint" in str(project_endpoint):
+            raise ValueError("AZURE_PROJECT_ENDPOINT is missing or still a placeholder")
         self.project_client = AIProjectClient(
             endpoint=project_endpoint,
             credential=DefaultAzureCredential()
@@ -63,6 +63,6 @@ class RetailAgentManager:
             model=get_config_value("AZURE_OPENAI_DEPLOYMENT"),
             name="Retail-Assistant-Agent",
             instructions="You are a retail expert. Use the provided tools to check inventory and find product locations.",
-            tools=[{"type": "azure_ai_search", "connection_id": "your_search_conn_id"}]
+            tools=[{"type": "azure_ai_search", "connection_id": get_config_value("AZURE_SEARCH_CONNECTION_ID") }]
         )
         return agent
