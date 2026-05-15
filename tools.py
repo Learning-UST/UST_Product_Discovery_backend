@@ -1,5 +1,5 @@
-from cosmos_service import CosmosService
-from search_service import AiSearch
+from services.cosmos_service import CosmosService
+from services.search_service import AiSearch
 
 cosmos = CosmosService()
 ai_search = AiSearch()
