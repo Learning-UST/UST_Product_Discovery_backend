@@ -60,7 +60,6 @@ def chat():
     # docs = ai_search.search_text(query, top_k=3)
     # answer = openai_service.generate_answer(query, history, docs)
     answer,docs = agent.ask(query=query,history=history)
-    print(docs)
     return jsonify({
         "query": query,
         "answer": answer,
@@ -200,7 +199,6 @@ def get_product(porodcut_name):
     FAST PATH: Called when a user selects a product on the Digital Twin.
     Returns metadata + current stock + calculated final price instantly.
     """
-    print(porodcut_name)
     try:
         # This uses the 'enriched' method we built in CosmosService
         # It handles: 1. Metadata 2. Inventory 3. Promotion Logic

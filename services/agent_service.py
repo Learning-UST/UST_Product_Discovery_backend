@@ -28,6 +28,7 @@ class ShoppingAgent:
 
         # ✅ Step 3: Retrieve using rewritten query
         docs = self.retriever.retrieve(query)
+        logger.info(f"Retrieved docs: {docs}")
 
         # ✅ Step 4: Build context
         context = build_context(docs)
@@ -37,5 +38,6 @@ class ShoppingAgent:
 
         # ✅ Step 6: Generate answer
         response = self.llm.generate(SYSTEM_PROMPT, prompt)
+        logger.info(f"Response: {response}")
 
         return response , docs

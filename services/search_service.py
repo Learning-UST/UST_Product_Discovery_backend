@@ -39,6 +39,12 @@ class AiSearch:
         fields = [
             SimpleField(name="id", type=SearchFieldDataType.String, key=True),
 
+            SimpleField(
+                name="product_id",
+                type=SearchFieldDataType.Int32,
+                filterable=True
+            ),
+
 
             # ✅ Shelf layout fields
             SimpleField(name="shelf_id", type=SearchFieldDataType.Int32, filterable=True),
@@ -47,7 +53,7 @@ class AiSearch:
 
 
             # Product info
-            SearchableField(name="product_name", type=SearchFieldDataType.String),
+            SearchableField(name="name", type=SearchFieldDataType.String),
             SearchableField(name="brand", type=SearchFieldDataType.String),
             SearchableField(name="category", type=SearchFieldDataType.String),
             SearchableField(name="description", type=SearchFieldDataType.String),
@@ -60,12 +66,49 @@ class AiSearch:
             SimpleField(name="stock", type=SearchFieldDataType.Int32, filterable=True),
             SimpleField(name="store_id", type=SearchFieldDataType.String, filterable=True),
 
+            # ✅ Additional product info
+            SearchableField(name="image_url", type=SearchFieldDataType.String),
+            SearchableField(name="country_of_origin", type=SearchFieldDataType.String),
+            SearchableField(name="shelf_life", type=SearchFieldDataType.String),
+
             # Promotion
             SearchableField(name="promotion_name", type=SearchFieldDataType.String),
+            SimpleField(name="discount_percentage", type=SearchFieldDataType.Double, filterable=True, sortable=True),
 
-            # ✅ Metadata fields
+
+            # ✅ Metadata (flattened)
             SimpleField(name="veg", type=SearchFieldDataType.Boolean, filterable=True),
+            SimpleField(name="age_restricted", type=SearchFieldDataType.Boolean, filterable=True),
+            SearchableField(name="color", type=SearchFieldDataType.String),
+
+
+            # ✅ Nutrition (store as text for search)
             SearchableField(name="nutrition", type=SearchFieldDataType.String),
+
+
+            # ✅ Ingredients & labels (collections)
+
+            SimpleField(
+                name="ingredients",
+                type=SearchFieldDataType.Collection(SearchFieldDataType.String),
+                filterable=True
+            ),
+            SimpleField(
+                name="allergens",
+                type=SearchFieldDataType.Collection(SearchFieldDataType.String),
+                filterable=True
+            ),
+            SimpleField(
+                name="health_labels",
+                type=SearchFieldDataType.Collection(SearchFieldDataType.String),
+                filterable=True
+            ),
+
+
+
+            # ✅ Serving info
+            SearchableField(name="serving_size", type=SearchFieldDataType.String),
+
 
             # ✅ Vector field
             SearchField(
@@ -140,36 +183,58 @@ class AiSearch:
         )
         return [self._format_result(r) for r in results]
 
-    # ✅ Read JSON file (combined_output.json)
-    def read_json(self, file_path="final_combined.json"):
+    # ✅ Read JSON file (updated for new schema)
+    def read_json(self, file_path="combined_output.json"):
+        import json
+
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         formatted_data = []
 
         for item in data:
+            metadata = item.get("metadata", {})
+            promotion = item.get("promotion", {})
+
             formatted_data.append({
                 "id": item.get("id"),
-
-                # ✅ Shelf fields
-                "shelf_id": item.get("shelf_id"),
-                "shelf_name": item.get("shelf_name"),
-                "row_id": item.get("row_id"),
+                "product_id": item.get("product_id"),
 
                 # ✅ Product fields
-                "product_name": item.get("product_name"),
+                "name": item.get("name"),
                 "brand": item.get("brand"),
                 "category": item.get("category"),
                 "description": item.get("description"),
+
+                # ✅ Pricing
                 "price": item.get("price"),
                 "discounted_price": item.get("discounted_price"),
+
+                # ✅ Inventory
                 "stock": item.get("stock"),
                 "store_id": item.get("store_id"),
-                "promotion_name": item.get("promotion"),
 
-                # ✅ Flatten metadata
-                "veg": item.get("metadata", {}).get("veg", False),
-                "nutrition": item.get("metadata", {}).get("nutrition", "")
+                # ✅ Additional fields
+                "image_url": item.get("image_url"),
+                "country_of_origin": item.get("country_of_origin"),
+                "shelf_life": item.get("shelf_life"),
+
+                # ✅ Promotion (flattened)
+                "promotion_name": promotion.get("name") if promotion else None,
+                "discount_percentage": promotion.get("discount_percentage") if promotion else None,
+
+                # ✅ Metadata (flattened)
+                "veg": metadata.get("veg", False),
+                "age_restricted": metadata.get("age_restricted", False),
+                "color": metadata.get("color"),
+
+                "nutrition": json.dumps(metadata.get("nutrition", {})),
+
+                "ingredients": metadata.get("ingredients", []),
+                "allergens": metadata.get("allergens", []),
+                "health_labels": metadata.get("health_labels", []),
+
+                "serving_size": metadata.get("serving_size")
             })
 
         return formatted_data
@@ -189,28 +254,44 @@ class AiSearch:
             print(f"❌ Error uploading documents: {str(e)}")
             return None
 
-    # ✅ Result Formatter
+    # ✅ Result Formatter (Updated)
     def _format_result(self, r):
         return {
             "id": r.get("id"),
-            "shelf_id": r.get("shelf_id"),
-            "shelf_name": r.get("shelf_name"),
-            "row_id": r.get("row_id"),
-            "product_name": r.get("product_name"),
+            "product_id": r.get("product_id"),
+            "name": r.get("name"),
             "brand": r.get("brand"),
             "category": r.get("category"),
             "description": r.get("description"),
+
+            # Pricing
             "price": r.get("price"),
             "discounted_price": r.get("discounted_price"),
-            "veg": r.get("veg"),
-            "nutrition": r.get("nutrition")
-        }
 
-if __name__  =="__main__":
-    search=AiSearch()
-    data=search.read_json()
-    # # print(data)
-    search.create_index()
-    search.insert(data)
-    # result=search.search_text("Instant soup")
-    # print(result)
+            # Inventory
+            "stock": r.get("stock"),
+            "store_id": r.get("store_id"),
+
+            # Product info
+            "image_url": r.get("image_url"),
+            "country_of_origin": r.get("country_of_origin"),
+            "shelf_life": r.get("shelf_life"),
+
+            # Promotion
+            "promotion": {
+                "name": r.get("promotion_name"),
+                "discount_percentage": r.get("discount_percentage")
+            } if r.get("promotion_name") else None,
+
+            # Metadata
+            "metadata": {
+                "veg": r.get("veg"),
+                "age_restricted": r.get("age_restricted"),
+                "color": r.get("color"),
+                "nutrition": r.get("nutrition"),
+                "ingredients": r.get("ingredients"),
+                "allergens": r.get("allergens"),
+                "health_labels": r.get("health_labels"),
+                "serving_size": r.get("serving_size")
+            }
+        }
