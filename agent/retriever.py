@@ -1,6 +1,6 @@
 # retriever.py
 
-from search_service import AiSearch
+from services.search_service import AiSearch
 from logger import get_logger
 
 logger = get_logger()
