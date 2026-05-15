@@ -12,7 +12,7 @@ Rules:
 - If the requested product is not present in the store, respond exactly with:
   "Product not found in store"
 - If the requested product is not on the shelf but exists in the store, respond exactly with:
-  "[product name] is not present on the shelf but is available in the store. It is available in [shelf name]."
+  "[product name] is not present on the shelf but is available in the store. It is available on [shelf name]."
 - Be concise, clear, and helpful.
 """
 
