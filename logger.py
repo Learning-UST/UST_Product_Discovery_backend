@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 
-def get_logger(name: str = "tire_ai") -> logging.Logger:
+def get_logger(name: str = "agent") -> logging.Logger:
     """
     Get a logger instance with Windows-compatible file handling.
     Uses RotatingFileHandler instead of TimedRotatingFileHandler to avoid
