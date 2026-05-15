@@ -1,22 +1,16 @@
 from flask import Flask, request, jsonify
-from search_service import AiSearch
-from openai_service import OpenAIService
-from agent_service import ShoppingAgent
-from embeddings import get_embedding
-from voice_service import transcribe_audio
-from cosmos_service import CosmosService
+from services.search_service import AiSearch
+from services.openai_service import OpenAIService
+from services.agent_service import ShoppingAgent
+from services.voice_service import transcribe_audio
+from services.cosmos_service import CosmosService
 from flask_cors import CORS
 from config import get_config_value
 import string
-import os
 from logger import get_logger
-
-def _clean_query(q):
-    return q.strip().rstrip(string.punctuation).strip() if q else q
 
 import qrcode
 import io
-import base64
 import requests as http_requests
 from flask import send_file
 
@@ -38,6 +32,11 @@ except Exception:
     agent_manager = None
 cosmos = CosmosService()
 
+
+def _clean_query(q):
+    return q.strip().rstrip(string.punctuation).strip() if q else q
+
+
 @app.route("/api/search", methods=["POST"])
 def search():
     data = request.json
@@ -57,11 +56,11 @@ def chat():
     data = request.json
     query = data.get("query")
     history = data.get("messages")
-    print(query,history)
     # embedding = get_embedding(query)
     # docs = ai_search.search_text(query, top_k=3)
     # answer = openai_service.generate_answer(query, history, docs)
     answer,docs = agent.ask(query=query,history=history)
+    print(docs)
     return jsonify({
         "query": query,
         "answer": answer,
@@ -194,6 +193,31 @@ def get_all_products():
             "message": "Unable to fetch products",
             "error": str(e)
         }), 500
+
+@app.route("/api/product/name/<porodcut_name>", methods=["GET"])
+def get_product(porodcut_name):
+    """
+    FAST PATH: Called when a user selects a product on the Digital Twin.
+    Returns metadata + current stock + calculated final price instantly.
+    """
+    print(porodcut_name)
+    try:
+        # This uses the 'enriched' method we built in CosmosService
+        # It handles: 1. Metadata 2. Inventory 3. Promotion Logic
+        product_info = cosmos.get_product_by_name(str(porodcut_name))
+        
+        return jsonify({
+            "status": "success",
+            "data": product_info
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Product not found or data incomplete",
+            "error": str(e)
+        }), 404
+
+
 
 @app.route("/api/generate-shelf-qr/<shelf_id>", methods=["GET"])
 def get_shelf_qr(shelf_id):
