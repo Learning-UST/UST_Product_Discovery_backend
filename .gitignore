@@ -219,3 +219,5 @@ __marimo__/
 
 *.zip
 QR/
+data/
+test_val/
