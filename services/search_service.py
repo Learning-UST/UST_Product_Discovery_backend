@@ -6,7 +6,7 @@ from azure.core.pipeline.transport import RequestsTransport
 
 import json
 
-from config import get_config_value
+from utils.config import get_config_value
 
 
 class AiSearch:

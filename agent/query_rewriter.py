@@ -1,5 +1,5 @@
 from agent.llm_service import LLMService
-from logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger()
 

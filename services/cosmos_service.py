@@ -1,5 +1,5 @@
 from azure.cosmos import CosmosClient
-from config import get_config_value
+from utils.config import get_config_value
 
 class CosmosService:
     def __init__(self):
@@ -24,13 +24,42 @@ class CosmosService:
         self.promo_ctr = self.db.get_container_client("promotion")
         self.lay_ctr = self.db.get_container_client("layout")
 
-    # def get_product_and_inventory(self, upc):
-    #     """Tool for Agent: Instant detail lookup"""
-    #     # UPCs in your Cosmos are strings
-    #     upc_str = str(upc)
-    #     product = self.prod_ctr.read_item(item=f"SKU_{upc_str}", partition_key=upc_str)
-    #     inventory = self.inv_ctr.read_item(item=f"INV_{upc_str}", partition_key=upc_str)
-    #     return {"product": product, "inventory": inventory}
+    def _format_product_info(self, data):
+        product = data['product']
+        inventory = data['inventory']
+        
+        effective_price, promo_name = self.resolve_effective_price(
+            product, inventory['Price']
+        )
+        
+        return {
+            "name": product["Name"],
+            "brand": product["Brand"],
+            "description": product["Description"],
+            "ingredients": product.get("Ingredients"),
+            "nutrition": product.get("Nutritional_Facts"),
+            "stock_status": "In Stock" if inventory["Quantity"] > 0 else "Out of Stock",
+            "quantity": inventory["Quantity"],
+            "base_price": inventory["Price"],
+            "final_price": effective_price,
+            "applied_promotion": promo_name,
+            "image_url": product["image_url"]
+        }
+
+    def get_all_products(self):
+        """Fetch all product documents from the products container."""
+        query = "SELECT * FROM c"
+        return list(self.prod_ctr.query_items(
+            query=query,
+            enable_cross_partition_query=True
+        ))
+
+
+    def get_shelf_layout(self, shelf_id):
+        """Tool for Agent: Digital Twin lookup"""
+        return self.lay_ctr.read_item(item=str(shelf_id), partition_key=int(shelf_id))
+
+
 
     def get_product_and_inventory(self, upc):
         """Tool for Agent: Instant detail lookup (safe query-based version)"""
@@ -75,19 +104,7 @@ class CosmosService:
             "product": products[0] if products else None,
             "inventory": inventory[0] if inventory else None
         }
-
-
-    def get_all_products(self):
-        """Fetch all product documents from the products container."""
-        query = "SELECT * FROM c"
-        return list(self.prod_ctr.query_items(
-            query=query,
-            enable_cross_partition_query=True
-        ))
-
-    def get_shelf_layout(self, shelf_id):
-        """Tool for Agent: Digital Twin lookup"""
-        return self.lay_ctr.read_item(item=str(shelf_id), partition_key=int(shelf_id))
+    
 
     def resolve_effective_price(self, product_data, base_price):
         """Logic to find the best applicable promotion"""
@@ -121,50 +138,82 @@ class CosmosService:
     def get_enriched_product_info(self, upc):
         """Unified tool for the Instant-Retrieval requirement"""
         data = self.get_product_and_inventory(upc)
-        product = data['product']
-        inventory = data['inventory']
-        
-        effective_price, promo_name = self.resolve_effective_price(
-            product, inventory['Price']
-        )
-        
-        return {
-            "name": product["Name"],
-            "brand": product["Brand"],
-            "description": product["Description"],
-            "ingredients": product.get("Ingredients"),
-            "nutrition": product.get("Nutritional_Facts"),
-            "stock_status": "In Stock" if inventory["Quantity"] > 0 else "Out of Stock",
-            "quantity": inventory["Quantity"],
-            "base_price": inventory["Price"],
-            "final_price": effective_price,
-            "applied_promotion": promo_name,
-            "image_url": product["image_url"]
-        }
+        return self._format_product_info(data=data)
 
-    def get_product_by_name(self, product_name):
+    def get_product_by_name(self, product_name: str):
         """
-        Query product(s) by name (case-insensitive partial match).
-        Returns a list of matching products.
+        Query products by name (case-insensitive partial match)
+        and fetch corresponding inventory for each product.
+        
+        Returns:
+            list of {
+                "product": {...},
+                "inventory": {...}
+            }
         """
 
-        query = """
+        # ✅ 1. Query matching products
+        product_query = """
         SELECT * FROM c
         WHERE CONTAINS(LOWER(c.Name), LOWER(@name))
         """
 
-        parameters = [
+        product_params = [
             {"name": "@name", "value": product_name}
         ]
 
-        results = list(self.prod_ctr.query_items(
-            query=query,
-            parameters=parameters,
+        products = list(self.prod_ctr.query_items(
+            query=product_query,
+            parameters=product_params,
             enable_cross_partition_query=True
         ))
+
+        if not products:
+            return []
+
+        results = []
+
+        # ✅ 2. Fetch inventory for each product
+        for product in products:
+            upc = str(product.get("upc") or product.get("UPC") or "")
+
+            if not upc:
+                # fallback if UPC missing
+                results.append({
+                    "product": product,
+                    "inventory": None
+                })
+                continue
+
+            inventory_query = """
+            SELECT * FROM c 
+            WHERE c.upc = @upc OR c.id = @inv_id
+            """
+
+            inventory_params = [
+                {"name": "@upc", "value": upc},
+                {"name": "@inv_id", "value": f"INV_{upc}"}
+            ]
+
+            inventory_items = list(self.inv_ctr.query_items(
+                query=inventory_query,
+                parameters=inventory_params,
+                enable_cross_partition_query=True
+            ))
+
+            results.append({
+                "product": product,
+                "inventory": inventory_items[0] if inventory_items else None
+            })
+
         return results
 
-
-
-    
-
+    def get_enriched_product_info_by_name(self, product_name):
+        """
+        Combined tool to search by product name and return enriched info.
+        Uses get_product_by_name and then resolves price and promotion for the first match.
+        """
+        data = self.get_product_by_name(product_name)
+        if not data:
+            return None
+        return self._format_product_info(data[0])

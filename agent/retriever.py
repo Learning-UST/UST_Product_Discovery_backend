@@ -1,7 +1,7 @@
 # retriever.py
 
 from services.search_service import AiSearch
-from logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger()
 

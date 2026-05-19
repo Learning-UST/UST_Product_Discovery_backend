@@ -1,10 +1,10 @@
 from openai import OpenAI
-from config import get_config_value
+from utils.config import get_config_value
 import json
 import httpx
 
 
-from logger import get_logger
+from utils.logger import get_logger
 from tools import get_product_details_tool, search_products_tool
 
 logger = get_logger()

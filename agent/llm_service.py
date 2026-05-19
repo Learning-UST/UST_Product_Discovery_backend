@@ -1,8 +1,8 @@
 # llm_service.py
 
 from openai import OpenAI
-from config import get_config_value
-from logger import get_logger
+from utils.config import get_config_value
+from utils.logger import get_logger
 
 logger = get_logger()
 

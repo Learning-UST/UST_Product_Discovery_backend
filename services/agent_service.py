@@ -2,7 +2,7 @@ from agent.retriever import Retriever
 from agent.prompt import build_context, build_prompt,format_history, SYSTEM_PROMPT
 from agent.llm_service import LLMService
 from agent.query_rewriter import QueryRewriter
-from logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger()
 

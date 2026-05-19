@@ -5,9 +5,9 @@ from services.agent_service import ShoppingAgent
 from services.voice_service import transcribe_audio
 from services.cosmos_service import CosmosService
 from flask_cors import CORS
-from config import get_config_value
+from utils.config import get_config_value
 import string
-from logger import get_logger
+from utils.logger import get_logger
 
 import qrcode
 import io

@@ -1,6 +1,6 @@
 import azure.cognitiveservices.speech as speechsdk
 import string
-from config import get_config_value
+from utils.config import get_config_value
 
 def transcribe_audio(audio_file_path):
     speech_config = speechsdk.SpeechConfig(
