@@ -5,7 +5,7 @@ import httpx
 
 
 from utils.logger import get_logger
-from tools import get_product_details_tool, search_products_tool
+# from tools import get_product_details_tool, search_products_tool
 
 logger = get_logger()
 
@@ -41,126 +41,126 @@ class OpenAIService:
 
         logger.info("OpenAI initialized...")
 
-    def get_master_prompt(self):
-        return """
-        You are the 'SmartRetail Assistant', a highly capable AI agent for a modern retail store.
-        Your goal is to provide a seamless shopping experience by acting as an intermediary between the customer and the store's digital twin.
+    # def get_master_prompt(self):
+    #     return """
+    #     You are the 'SmartRetail Assistant', a highly capable AI agent for a modern retail store.
+    #     Your goal is to provide a seamless shopping experience by acting as an intermediary between the customer and the store's digital twin.
 
-        COMMANDS & TOOLS:
-        - If a user wants to find a product category (e.g., 'snacks'): Use search_products_tool.
-        - If a user asks about a specific item's price/stock: Use get_product_details_tool.
-        - If a user asks for their location or shelf layout: Use get_shelf_layout_tool.
+    #     COMMANDS & TOOLS:
+    #     - If a user wants to find a product category (e.g., 'snacks'): Use search_products_tool.
+    #     - If a user asks about a specific item's price/stock: Use get_product_details_tool.
+    #     - If a user asks for their location or shelf layout: Use get_shelf_layout_tool.
 
-        STRICT RULES:
-        1. INVENTORY: Always verify 'stock_status' from the tool before telling a user they can buy an item.
-        2. PRICING: Only report the 'final_price'. If a promotion is applied, mention the 'Promotion Name' as a bonus.
-        3. VOICE: Keep responses concise (under 3 sentences) because the user is likely listening via speech-to-text.
-        4. MISSING DATA: If the tool returns 'Out of Stock', still provide nutritional info but suggest they check back later.
-        """
+    #     STRICT RULES:
+    #     1. INVENTORY: Always verify 'stock_status' from the tool before telling a user they can buy an item.
+    #     2. PRICING: Only report the 'final_price'. If a promotion is applied, mention the 'Promotion Name' as a bonus.
+    #     3. VOICE: Keep responses concise (under 3 sentences) because the user is likely listening via speech-to-text.
+    #     4. MISSING DATA: If the tool returns 'Out of Stock', still provide nutritional info but suggest they check back later.
+    #     """
 
-    def run_orchestrator(self, user_query):
-        # This is where the Agentic decision happens
-        tools = [
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_product_details",
-                    "description": "Get real-time price and stock for a specific UPC",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {"upc": {"type": "string"}},
-                        "required": ["upc"]
-                    }
-                }
-            },
-            # Add more tools (search_products, get_shelf_layout) here...
-        ]
+    # def run_orchestrator(self, user_query):
+    #     # This is where the Agentic decision happens
+    #     tools = [
+    #         {
+    #             "type": "function",
+    #             "function": {
+    #                 "name": "get_product_details",
+    #                 "description": "Get real-time price and stock for a specific UPC",
+    #                 "parameters": {
+    #                     "type": "object",
+    #                     "properties": {"upc": {"type": "string"}},
+    #                     "required": ["upc"]
+    #                 }
+    #             }
+    #         },
+    #         # Add more tools (search_products, get_shelf_layout) here...
+    #     ]
 
-        response = self.client.chat.completions.create(
-            model=self.deployment,
-            messages=[
-                {"role": "system", "content": self.get_master_prompt()},
-                {"role": "user", "content": user_query}
-            ],
-            tools=tools,
-            tool_choice="auto"
-        )
-        return response.choices[0].message
+    #     response = self.client.chat.completions.create(
+    #         model=self.deployment,
+    #         messages=[
+    #             {"role": "system", "content": self.get_master_prompt()},
+    #             {"role": "user", "content": user_query}
+    #         ],
+    #         tools=tools,
+    #         tool_choice="auto"
+    #     )
+    #     return response.choices[0].message
 
 
-    def get_agent_tools(self):
-        return [
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_product_details_tool",
-                    "description": "Use this to check stock, price, and ingredients for a specific item.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {"upc": {"type": "string"}},
-                        "required": ["upc"]
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "search_products_tool",
-                    "description": "Use this for general questions like 'find me snacks' or 'healthy food'.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {"query": {"type": "string"}},
-                        "required": ["query"]
-                    }
-                }
-            }
-        ]
+    # def get_agent_tools(self):
+    #     return [
+    #         {
+    #             "type": "function",
+    #             "function": {
+    #                 "name": "get_product_details_tool",
+    #                 "description": "Use this to check stock, price, and ingredients for a specific item.",
+    #                 "parameters": {
+    #                     "type": "object",
+    #                     "properties": {"upc": {"type": "string"}},
+    #                     "required": ["upc"]
+    #                 }
+    #             }
+    #         },
+    #         {
+    #             "type": "function",
+    #             "function": {
+    #                 "name": "search_products_tool",
+    #                 "description": "Use this for general questions like 'find me snacks' or 'healthy food'.",
+    #                 "parameters": {
+    #                     "type": "object",
+    #                     "properties": {"query": {"type": "string"}},
+    #                     "required": ["query"]
+    #                 }
+    #             }
+    #         }
+    #     ]
 
-    def generate_agentic_answer(self, query):
-        messages = [
-            {"role": "system", "content": "You are a retail agent. Use tools to provide real-time data. Always report stock status and final price."},
-            {"role": "user", "content": query}
-        ]
+    # def generate_agentic_answer(self, query):
+    #     messages = [
+    #         {"role": "system", "content": "You are a retail agent. Use tools to provide real-time data. Always report stock status and final price."},
+    #         {"role": "user", "content": query}
+    #     ]
 
-        # 1. First call to see if a tool is needed
-        response = self.client.chat.completions.create(
-            model=self.deployment,
-            messages=messages,
-            tools=self.get_agent_tools(),
-            tool_choice="auto"
-        )
+    #     # 1. First call to see if a tool is needed
+    #     response = self.client.chat.completions.create(
+    #         model=self.deployment,
+    #         messages=messages,
+    #         tools=self.get_agent_tools(),
+    #         tool_choice="auto"
+    #     )
 
-        response_message = response.choices[0].message
-        tool_calls = response_message.tool_calls
+    #     response_message = response.choices[0].message
+    #     tool_calls = response_message.tool_calls
 
-        # 2. If the Agent decided to use a tool
-        if tool_calls:
-            for tool_call in tool_calls:
-                function_name = tool_call.function.name
-                args = json.loads(tool_call.function.arguments)
+    #     # 2. If the Agent decided to use a tool
+    #     if tool_calls:
+    #         for tool_call in tool_calls:
+    #             function_name = tool_call.function.name
+    #             args = json.loads(tool_call.function.arguments)
                 
-                # Execute the tool
-                if function_name == "get_product_details_tool":
-                    result = get_product_details_tool(args.get("upc"))
-                else:
-                    result = search_products_tool(args.get("query"))
+    #             # Execute the tool
+    #             if function_name == "get_product_details_tool":
+    #                 result = get_product_details_tool(args.get("upc"))
+    #             else:
+    #                 result = search_products_tool(args.get("query"))
 
-                messages.append(response_message)
-                messages.append({
-                    "tool_call_id": tool_call.id,
-                    "role": "tool",
-                    "name": function_name,
-                    "content": json.dumps(result)
-                })
+    #             messages.append(response_message)
+    #             messages.append({
+    #                 "tool_call_id": tool_call.id,
+    #                 "role": "tool",
+    #                 "name": function_name,
+    #                 "content": json.dumps(result)
+    #             })
 
-            # 3. Get final natural language response
-            final_response = self.client.chat.completions.create(
-                model=self.deployment,
-                messages=messages
-            )
-            return final_response.choices[0].message.content
+    #         # 3. Get final natural language response
+    #         final_response = self.client.chat.completions.create(
+    #             model=self.deployment,
+    #             messages=messages
+    #         )
+    #         return final_response.choices[0].message.content
         
-        return response_message.content
+    #     return response_message.content
 
     # ✅ Build structured context
     def build_context(self, documents: list) -> str:

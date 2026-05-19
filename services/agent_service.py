@@ -18,7 +18,7 @@ class ShoppingAgent:
 
 
         # ✅ Step 1: Get formatted history
-        history = format_history(history)
+        # history = format_history(history)
 
         # ✅ Step 2: Rewrite query using history
         rewritten_query = self.rewriter.rewrite(query, history)
@@ -31,10 +31,12 @@ class ShoppingAgent:
         logger.info(f"Retrieved docs: {docs}")
 
         # ✅ Step 4: Build context
-        context = build_context(docs)
+        # context = build_context(docs)
 
         # ✅ Step 5: Build final prompt (use ORIGINAL query for answering)
-        prompt = build_prompt(query, history, context)
+        prompt = build_prompt(query, history, docs)
+
+        logger.info(f"Final Prompt: {prompt}")
 
         # ✅ Step 6: Generate answer
         response = self.llm.generate(SYSTEM_PROMPT, prompt)
