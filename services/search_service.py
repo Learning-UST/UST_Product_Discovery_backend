@@ -60,7 +60,9 @@ class AiSearch:
 
             # Pricing
             SimpleField(name="price", type=SearchFieldDataType.Double, filterable=True, sortable=True),
+            SimpleField(name="us_price", type=SearchFieldDataType.Double, filterable=True, sortable=True),
             SimpleField(name="discounted_price", type=SearchFieldDataType.Double, filterable=True, sortable=True),
+            SimpleField(name="us_discounted_price", type=SearchFieldDataType.Double, filterable=True, sortable=True),
 
             # Inventory
             SimpleField(name="stock", type=SearchFieldDataType.Int32, filterable=True),
@@ -208,7 +210,9 @@ class AiSearch:
 
                 # ✅ Pricing
                 "price": item.get("price"),
+                "us_price": item.get("us_price"),
                 "discounted_price": item.get("discounted_price"),
+                "us_discounted_price": item.get("us_discounted_price"),
 
                 # ✅ Inventory
                 "stock": item.get("stock"),
@@ -266,7 +270,9 @@ class AiSearch:
 
             # Pricing
             "price": r.get("price"),
+            "us_price": r.get("us_price"),
             "discounted_price": r.get("discounted_price"),
+            "us_discounted_price": r.get("us_discounted_price"),
 
             # Inventory
             "stock": r.get("stock"),

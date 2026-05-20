@@ -24,14 +24,34 @@ class CosmosService:
         self.promo_ctr = self.db.get_container_client("promotion")
         self.lay_ctr = self.db.get_container_client("layout")
 
+    def _get_price_source(self):
+        source = str(get_config_value("PRICE_SOURCE", "NORMAL")).strip().upper()
+        return source if source in {"NORMAL", "US"} else "NORMAL"
+
+    def _resolve_inventory_prices(self, inventory):
+        normal_price = inventory.get("Price")
+        us_price = inventory.get("US_Price", inventory.get("US_price"))
+        price_source = self._get_price_source()
+
+        if price_source == "US" and us_price is not None:
+            selected_base_price = us_price
+        else:
+            selected_base_price = normal_price
+            if selected_base_price is None:
+                selected_base_price = us_price
+
+        return normal_price, us_price, selected_base_price, price_source
+
     def _format_product_info(self, data):
         product = data['product']
         inventory = data['inventory']
-        
+
+        normal_price, us_price, selected_base_price, price_source = self._resolve_inventory_prices(inventory)
+
         effective_price, promo_name = self.resolve_effective_price(
-            product, inventory['Price']
+            product, selected_base_price
         )
-        
+
         return {
             "name": product["Name"],
             "brand": product["Brand"],
@@ -40,7 +60,10 @@ class CosmosService:
             "nutrition": product.get("Nutritional_Facts"),
             "stock_status": "In Stock" if inventory["Quantity"] > 0 else "Out of Stock",
             "quantity": inventory["Quantity"],
-            "base_price": inventory["Price"],
+            "base_price": normal_price,
+            "us_price": us_price,
+            "price_source": price_source,
+            "selected_base_price": selected_base_price,
             "final_price": effective_price,
             "applied_promotion": promo_name,
             "image_url": product["image_url"]
@@ -108,6 +131,9 @@ class CosmosService:
 
     def resolve_effective_price(self, product_data, base_price):
         """Logic to find the best applicable promotion"""
+        if base_price is None:
+            return None, None
+
         brand = product_data.get("Brand")
         category = product_data.get("Category")
         product_id = product_data.get("Product_Id")

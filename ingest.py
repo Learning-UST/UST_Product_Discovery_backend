@@ -1,5 +1,6 @@
 import json
 from datetime import datetime,timezone
+from utils.config import get_config_value
 
 # ---------- Load JSON files ----------
 def load_json(file_path):
@@ -48,6 +49,10 @@ def get_best_promo(product):
     return applicable[0]
 
 # ---------- Combine data ----------
+price_source = str(get_config_value("PRICE_SOURCE", "NORMAL")).strip().upper()
+if price_source not in {"NORMAL", "US"}:
+    price_source = "US"
+
 combined_data = []
 
 for product in products:
@@ -60,11 +65,23 @@ for product in products:
     promo = get_best_promo(product)
 
     price = inv["Price"]
+    us_price = inv.get("US_Price", inv.get("US_price"))
+
     discounted_price = price
+    us_discounted_price = us_price
 
     if promo:
         discount = promo["Discount_Percentage"]
         discounted_price = round(price * (1 - discount / 100), 2)
+        if us_price is not None:
+            us_discounted_price = round(us_price * (1 - discount / 100), 2)
+
+    selected_price = us_price if price_source == "US" and us_price is not None else price
+    selected_discounted_price = (
+        us_discounted_price
+        if price_source == "US" and us_discounted_price is not None
+        else discounted_price
+    )
 
     combined_item = {
         "id": product["id"],
@@ -73,7 +90,12 @@ for product in products:
         "category": product["Category"],
         "description": product["Description"],
         "price": price,
+        "us_price": us_price,
         "discounted_price": discounted_price,
+        "us_discounted_price": us_discounted_price,
+        "selected_price": selected_price,
+        "selected_discounted_price": selected_discounted_price,
+        "price_source": price_source,
         "stock": inv["Quantity"],
         "store_id": inv["store_id"],
         "promotion": {

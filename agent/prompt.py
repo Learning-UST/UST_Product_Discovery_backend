@@ -1,5 +1,7 @@
 # prompt.py
 
+from utils.config import get_config_value
+
 SYSTEM_PROMPT = """
 You are a retail shopping assistant that provides accurate product information based ONLY on the given context.
 
@@ -17,18 +19,49 @@ Rules:
 """
 
 
+def _select_chat_prices(doc: dict):
+    source = str(get_config_value("PRICE_SOURCE", "NORMAL")).strip().upper()
+    source = source if source in {"NORMAL", "US"} else "NORMAL"
+
+    normal_price = doc.get("price")
+    us_price = doc.get("us_price", doc.get("US_Price"))
+    normal_discounted_price = doc.get("discounted_price")
+    us_discounted_price = doc.get("us_discounted_price")
+
+    if source == "US":
+        selected_price = us_price if us_price is not None else normal_price
+        selected_discounted_price = (
+            us_discounted_price
+            if us_discounted_price is not None
+            else normal_discounted_price
+        )
+    else:
+        selected_price = normal_price if normal_price is not None else us_price
+        selected_discounted_price = (
+            normal_discounted_price
+            if normal_discounted_price is not None
+            else us_discounted_price
+        )
+
+    return source, normal_price, us_price, selected_price, selected_discounted_price
+
+
 def build_context(documents: list) -> str:
     lines = []
 
     for d in documents:
+        source, normal_price, us_price, selected_price, selected_discounted_price = _select_chat_prices(d)
         lines.append(f"""
 Product ID: {d.get('id')}
 Name: {d.get('name')}
 Brand: {d.get('brand')}
 Category: {d.get('category')}
 Description: {d.get('description')}
-Price: ₹{d.get('price')}
-Discounted Price: ₹{d.get('discounted_price')}
+Configured Price Source: {source}
+Normal Price: ₹{normal_price}
+US Price: ₹{us_price}
+Price: ₹{selected_price}
+Discounted Price: ₹{selected_discounted_price}
 Veg: {"Yes" if d.get('veg') else "No"}
 Nutrition: {d.get('nutrition')}
 """.strip())
