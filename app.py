@@ -8,6 +8,7 @@ from flask_cors import CORS
 from utils.config import get_config_value
 import string
 from utils.logger import get_logger
+from agents.agent import ShopilotAgent
 
 import qrcode
 import io
@@ -25,6 +26,7 @@ CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 # ✅ Initialize services (once)
 ai_search = AiSearch()
 agent=ShoppingAgent()
+shopilot=ShopilotAgent()
 openai_service = OpenAIService()
 try:
     agent_manager = ShoppingAgent()
@@ -59,7 +61,7 @@ def chat():
     # embedding = get_embedding(query)
     # docs = ai_search.search_text(query, top_k=3)
     # answer = openai_service.generate_answer(query, history, docs)
-    answer,docs = agent.ask(query=query,history=history)
+    answer,docs = shopilot.chat(message=query, history=history)
     return jsonify({
         "query": query,
         "answer": answer,

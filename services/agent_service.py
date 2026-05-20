@@ -127,12 +127,12 @@ class ShoppingAgent:
                 
                 # Instantiating locally using standard environment configurations mapped by your deployment scripts
                 azure_client = AzureOpenAI(
-                    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-                    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+                    azure_endpoint=get_config_value("AZURE_OPENAI_ENDPOINT"),
+                    api_key=get_config_value("AZURE_OPENAI_API_KEY"),
                     api_version="2024-02-01"
                 )
                 response = azure_client.chat.completions.create(
-                    model=os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini"),
+                    model=get_config_value("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini"),
                     messages=messages,
                     tools=tools,
                     tool_choice="auto"
@@ -174,7 +174,7 @@ class ShoppingAgent:
             # Fetch the final summary execution response from Azure OpenAI
             if 'azure_client' in locals():
                 second_response = azure_client.chat.completions.create(
-                    model=os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini"),
+                    model=get_config_value("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini"),
                     messages=messages
                 )
             else:
