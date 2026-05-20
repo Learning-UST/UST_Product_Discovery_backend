@@ -16,8 +16,20 @@ class Retriever:
         source = str(get_config_value("PRICE_SOURCE", "NORMAL")).strip().upper()
         return source if source in {"NORMAL", "US"} else "NORMAL"
 
+    def _currency_symbol(self, source: str) -> str:
+        configured_symbol = get_config_value("PRICE_CURRENCY_SYMBOL")
+        if configured_symbol is not None and str(configured_symbol).strip() != "":
+            return str(configured_symbol).strip()
+        return "$" if source == "US" else "INR "
+
+    def _format_currency(self, symbol: str, amount):
+        if amount is None:
+            return None
+        return f"{symbol}{amount}"
+
     def _apply_price_source(self, docs):
         source = self._price_source()
+        currency_symbol = self._currency_symbol(source)
         normalized_docs = []
 
         for doc in docs:
@@ -41,8 +53,11 @@ class Retriever:
             d["normal_price"] = normal_price
             d["normal_discounted_price"] = normal_discounted_price
             d["price_source"] = source
+            d["currency_symbol"] = currency_symbol
             d["price"] = selected_price
             d["discounted_price"] = selected_discounted_price
+            d["display_price"] = self._format_currency(currency_symbol, selected_price)
+            d["display_discounted_price"] = self._format_currency(currency_symbol, selected_discounted_price)
             normalized_docs.append(d)
 
         return normalized_docs

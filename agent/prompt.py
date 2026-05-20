@@ -46,11 +46,19 @@ def _select_chat_prices(doc: dict):
     return source, normal_price, us_price, selected_price, selected_discounted_price
 
 
+def _currency_symbol(source: str) -> str:
+    configured_symbol = get_config_value("PRICE_CURRENCY_SYMBOL")
+    if configured_symbol is not None and str(configured_symbol).strip() != "":
+        return str(configured_symbol).strip()
+    return "$" if source == "US" else "INR "
+
+
 def build_context(documents: list) -> str:
     lines = []
 
     for d in documents:
         source, normal_price, us_price, selected_price, selected_discounted_price = _select_chat_prices(d)
+        symbol = _currency_symbol(source)
         lines.append(f"""
 Product ID: {d.get('id')}
 Name: {d.get('name')}
@@ -58,10 +66,10 @@ Brand: {d.get('brand')}
 Category: {d.get('category')}
 Description: {d.get('description')}
 Configured Price Source: {source}
-Normal Price: ₹{normal_price}
-US Price: ₹{us_price}
-Price: ₹{selected_price}
-Discounted Price: ₹{selected_discounted_price}
+    Normal Price: {symbol}{normal_price}
+    US Price: {symbol}{us_price}
+    Price: {symbol}{selected_price}
+    Discounted Price: {symbol}{selected_discounted_price}
 Veg: {"Yes" if d.get('veg') else "No"}
 Nutrition: {d.get('nutrition')}
 """.strip())

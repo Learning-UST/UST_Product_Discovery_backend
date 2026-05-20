@@ -44,7 +44,7 @@ class ShoppingAgent:
 
         # Step 3: Format conversation message history for the router
         messages = [
-            {"role": "system", "content": "You are a smart retail assistant. You can handle generalized conversations directly. If the user is asking about product data, inventory, dietary preferences (like gluten-free), or specific properties (like calories), you MUST use the 'retrieve_products' tool first."}
+            {"role": "system", "content": "You are a smart retail assistant. You can handle generalized conversations directly. If the user is asking about product data, inventory, dietary preferences (like gluten-free), or specific properties (like calories), you MUST use the 'retrieve_products' tool first. For any price-related answer, never return a bare number: use the currency symbol from 'currency_symbol' and prefer 'display_price'/'display_discounted_price' fields when available."}
         ]
         
         for msg in history:
