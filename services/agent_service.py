@@ -1,9 +1,11 @@
 import json
+import re
 from agent.retriever import Retriever
 from agent.prompt import build_context, build_prompt, format_history, SYSTEM_PROMPT
 from agent.llm_service import LLMService
 from agent.query_rewriter import QueryRewriter
 from utils.logger import get_logger
+from utils.config import get_config_value
 
 logger = get_logger()
 
@@ -13,6 +15,58 @@ class ShoppingAgent:
         self.retriever = Retriever()
         self.llm = LLMService()  # Your existing service that handles Azure connections
         self.rewriter = QueryRewriter()
+
+    def _is_price_query(self, query: str) -> bool:
+        q = (query or "").lower()
+        keywords = ["price", "cost", "rate", "value", "discount", "mrp"]
+        return any(k in q for k in keywords)
+
+    def _currency_symbol(self, docs: list) -> str:
+        if docs:
+            symbol = docs[0].get("currency_symbol")
+            if symbol:
+                return str(symbol)
+
+        configured_symbol = get_config_value("PRICE_CURRENCY_SYMBOL")
+        if configured_symbol is not None and str(configured_symbol).strip() != "":
+            return str(configured_symbol).strip()
+
+        source = str(get_config_value("PRICE_SOURCE", "NORMAL")).strip().upper()
+        return "$" if source == "US" else "INR "
+
+    def _enforce_currency_symbol(self, text: str, docs: list) -> str:
+        if not text:
+            return text
+
+        symbol = self._currency_symbol(docs)
+        updated = text
+
+        # Replace known doc prices first for high precision.
+        candidates = []
+        for d in docs or []:
+            for key in ["price", "discounted_price", "normal_price", "normal_discounted_price", "us_price", "us_discounted_price"]:
+                value = d.get(key)
+                if isinstance(value, (int, float)):
+                    candidates.append(f"{value:g}")
+                    candidates.append(f"{value:.2f}")
+
+        for num in sorted(set(candidates), key=len, reverse=True):
+            updated = re.sub(
+                rf"(?<!\$)(?<!₹)(?<!INR\s)(?<!USD\s)\b{re.escape(num)}\b",
+                f"{symbol}{num}",
+                updated,
+            )
+
+        # Fallback: if still no symbol, add symbol to the first plain decimal/integer.
+        if ("$" not in updated and "₹" not in updated and "INR " not in updated and "USD " not in updated):
+            updated = re.sub(
+                r"(?<!\$)(?<!₹)(?<!INR\s)(?<!USD\s)(\b\d+(?:\.\d{1,2})?\b)",
+                rf"{symbol}\1",
+                updated,
+                count=1,
+            )
+
+        return updated
 
     def ask(self, query: str, history: list):
         # Step 1: Rewrite query using conversation history
@@ -89,6 +143,8 @@ class ShoppingAgent:
             docs = self.retriever.retrieve(rewritten_query)
             prompt = build_prompt(query, history, docs)
             fallback_res = self.llm.generate(SYSTEM_PROMPT, prompt)
+            if self._is_price_query(query):
+                fallback_res = self._enforce_currency_symbol(fallback_res, docs)
             return fallback_res, docs
 
         response_message = response.choices[0].message
@@ -126,8 +182,11 @@ class ShoppingAgent:
                     model=self.llm.model_name if hasattr(self.llm, 'model_name') else "gpt-4o-mini",
                     messages=messages
                 )
-                
-            return second_response.choices[0].message.content, docs
+
+            final_text = second_response.choices[0].message.content
+            if self._is_price_query(query):
+                final_text = self._enforce_currency_symbol(final_text, docs)
+            return final_text, docs
 
         else:
             # Generalized query route (No database search needed!)
