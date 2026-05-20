@@ -15,6 +15,8 @@ Rules:
   "Product not found in store"
 - If the requested product is not on the shelf but exists in the store, respond exactly with:
   "[product name] is not present on the shelf but is available in the store. It is available on [shelf name]."
+- Mention price only when the user asks for price/cost/value/discount.
+- If you mention price, always include the configured currency symbol and never return bare numeric prices.
 - Be concise, clear, and helpful.
 """
 
