@@ -9,7 +9,7 @@ def load_json(file_path):
 
 promotions = load_json("promotion.json")
 products = load_json("products.json")
-inventory = load_json("inventory.json")
+inventory = load_json("inventory_new.json")
 
 # ---------- Helper: check promotion validity ----------
 def is_active(promo):
@@ -34,17 +34,16 @@ def get_best_promo(product):
         scope_type = promo["Scope_Type"]
         scope_value = promo["Scope_Value"]
 
-        if scope_type == "Brand" and product["Brand"] == scope_value:
+        if scope_type == "Brand" and product.get("Brand") == scope_value:
             applicable.append(promo)
-        elif scope_type == "Category" and product["Category"] == scope_value:
+        elif scope_type == "Category" and product.get("Category") == scope_value:
             applicable.append(promo)
-        elif scope_type == "Product" and str(product["Product_Id"]) == str(scope_value):
+        elif scope_type == "Product" and str(product.get("Product_Id")) == str(scope_value):
             applicable.append(promo)
 
     if not applicable:
         return None
 
-    # select by highest priority (lowest number = higher priority)
     applicable.sort(key=lambda x: x.get("Priority", 999))
     return applicable[0]
 
@@ -56,22 +55,23 @@ if price_source not in {"NORMAL", "US"}:
 combined_data = []
 
 for product in products:
-    upc = product["UPC"]
+    upc = product.get("UPC")
     inv = inventory_map.get(upc)
 
     if not inv:
-        continue  # skip if no inventory
+        continue
 
     promo = get_best_promo(product)
 
     price = inv["Price"]
     us_price = inv.get("US_Price", inv.get("US_price"))
 
+    price = inv.get("Price", 0)
     discounted_price = price
     us_discounted_price = us_price
 
     if promo:
-        discount = promo["Discount_Percentage"]
+        discount = promo.get("Discount_Percentage", 0)
         discounted_price = round(price * (1 - discount / 100), 2)
         if us_price is not None:
             us_discounted_price = round(us_price * (1 - discount / 100), 2)
@@ -84,11 +84,13 @@ for product in products:
     )
 
     combined_item = {
-        "id": product["id"],
-        "name": product["Name"],
-        "brand": product["Brand"],
-        "category": product["Category"],
-        "description": product["Description"],
+        "id": product.get("id"),
+        "product_id": product.get("Product_Id"),
+        "name": product.get("Name"),
+        "brand": product.get("Brand"),
+        "category": product.get("Category"),
+        "description": product.get("Description"),
+
         "price": price,
         "us_price": us_price,
         "discounted_price": discounted_price,
@@ -96,27 +98,43 @@ for product in products:
         "selected_price": selected_price,
         "selected_discounted_price": selected_discounted_price,
         "price_source": price_source,
-        "stock": inv["Quantity"],
-        "store_id": inv["store_id"],
+        "stock": inv.get("Quantity", 0),
+        "store_id": inv.get("store_id"),
+
+        "image_url": product.get("image_url"),
+        "country_of_origin": product.get("Country_Of_Origin"),
+        "shelf_life": product.get("Shelf_Life"),
+
         "promotion": {
-            "name": promo["Promotion_Name"],
-            "discount_percentage": promo["Discount_Percentage"]
+            "name": promo.get("Promotion_Name"),
+            "discount_percentage": promo.get("Discount_Percentage")
         } if promo else None,
+
         "metadata": {
-            "veg": product["Veg"],
-            "nutrition": product["Nutritional_Facts"],
+            "veg": product.get("Veg"),
+            "age_restricted": product.get("age_restricted"),
+            "color": product.get("Colour"),
+
+            "nutrition": product.get("Nutritional_Facts", {}),
+            "ingredients": product.get("Ingredients", []),
+            "allergens": product.get("Allergens", []),
+            "preservatives": product.get("Preservatives", []),
+            "health_labels": product.get("Health_Labels", []),
+
             "dimensions": {
-                "height": product["Height(cm)"],
-                "width": product["Width(cm)"],
-                "depth": product["Depth(cm)"]
-            }
+                "height_cm": product.get("Height(cm)"),
+                "width_cm": product.get("Width(cm)"),
+                "depth_cm": product.get("Depth(cm)")
+            },
+
+            "serving_size": product.get("Serving_Size")
         }
     }
 
     combined_data.append(combined_item)
 
 # ---------- Save output ----------
-with open("combined_output.json", "w") as f:
-    json.dump(combined_data, f, indent=2)
+with open("combined_output_new.json", "w", encoding="utf-8") as f:
+    json.dump(combined_data, f, indent=2, ensure_ascii=False)
 
-print(f"✅ Combined {len(combined_data)} records into combined_output.json")
+print(f"✅ Combined {len(combined_data)} records into combined_output_new.json")
