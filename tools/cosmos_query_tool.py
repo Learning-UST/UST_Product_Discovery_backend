@@ -1,56 +1,65 @@
 from services.cosmos_service import CosmosService
-import json
+from services.openai_service import OpenAIService
+from utils.logger import get_logger
 
-cosmos = CosmosService()
+logger = get_logger()
 
-TOOL_DESCRIPTIONS = {
-    "get_product_by_name": "Use this when user provides product name. Returns full enriched product details.",
-    "get_product_by_upc": "Use this when user provides UPC or wants exact product lookup."
-}
 
-def get_product_by_name_tool(product_name: str) -> str:
+def search_products(message: str) -> dict:
     """
-    Tool: Fetch enriched product details using product name.
-    
-    Use this when user provides product name instead of UPC.
-    Includes:
-    - Product info
-    - Inventory
-    - Pricing
-    - Promotions
+    End-to-end search:
+    1. Convert natural language → Cosmos query
+    2. Execute query
+    3. Clean response
     """
 
     try:
-        results = cosmos.get_enriched_product_info_by_name(product_name)
+        openai_service = OpenAIService()
+        cosmos_service = CosmosService()
 
-        if not results:
-            return "No products found with that name."
+        # ✅ Step 1: Build Query
+        query_response = openai_service.query_builder(message)
 
-        return json.dumps(results, indent=2)
+        if query_response["status"] != "success":
+            logger.error("Query builder failed", extra={"response": query_response})
+            return {
+                "status": "error",
+                "message": "Failed to generate query"
+            }
+
+        table = query_response["table"]
+
+        query_data = {
+            "query": query_response["query"],
+            "parameters": query_response.get("parameters", [])
+        }
+
+        # ✅ Step 2: Execute Query
+        db_result = cosmos_service.query_executor(query_data, table)
+
+        if db_result["status"] != "success":
+            logger.error("Query execution failed", extra={"response": db_result})
+            return db_result
+
+
+        return {
+            "status": "success",
+            "table": table,
+            "count": db_result.get("count", 0),
+            "results": db_result.get("results", [])
+        }
 
     except Exception as e:
-        return f"Error fetching product by name: {str(e)}"
+        logger.exception("search_products failed")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
-def get_product_by_upc_tool(upc: str) -> str:
+# ✅ Tool Wrapper (AutoGen / API use)
+def cosmos_tool(query: str) -> dict:
     """
-    Tool: Fetch enriched product details using UPC.
-
-    Use this for exact product lookup.
-    Includes:
-    - Product info
-    - Inventory
-    - Pricing
-    - Promotions
+    Tool wrapper function
     """
-
-    try:
-        result = cosmos.get_enriched_product_info(upc)
-
-        if not result:
-            return "Product not found."
-
-        return json.dumps(result, indent=2)
-
-    except Exception as e:
-        return f"Error fetching product by UPC: {str(e)}"
+    return search_products(query)

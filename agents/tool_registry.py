@@ -1,11 +1,18 @@
-from tools.cosmos_query_tool import (
-    get_product_by_name_tool,
-    get_product_by_upc_tool
-)
+# Initialize once
+from agents.tools import ProductSearchTools
+
+tools_service = ProductSearchTools()
 
 
-TOOL_MAP = {
-    "get_product_by_name": get_product_by_name_tool,
-    "get_product_by_upc": get_product_by_upc_tool,
-}
+def cosmos_query_tool(query: str, content: str) -> dict:
+    """
+    AutoGen Tool → Structured DB search
+    """
+    return tools_service.cosmos_query(query, content)
 
+
+def ai_search_tool(query: str) -> dict:
+    """
+    AutoGen Tool → Semantic search
+    """
+    return tools_service.ai_search_query(query)

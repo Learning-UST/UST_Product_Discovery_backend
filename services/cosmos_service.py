@@ -24,34 +24,14 @@ class CosmosService:
         self.promo_ctr = self.db.get_container_client("promotion")
         self.lay_ctr = self.db.get_container_client("layout")
 
-    def _get_price_source(self):
-        source = str(get_config_value("PRICE_SOURCE", "NORMAL")).strip().upper()
-        return source if source in {"NORMAL", "US"} else "NORMAL"
-
-    def _resolve_inventory_prices(self, inventory):
-        normal_price = inventory.get("Price")
-        us_price = inventory.get("US_Price", inventory.get("US_price"))
-        price_source = self._get_price_source()
-
-        if price_source == "US" and us_price is not None:
-            selected_base_price = us_price
-        else:
-            selected_base_price = normal_price
-            if selected_base_price is None:
-                selected_base_price = us_price
-
-        return normal_price, us_price, selected_base_price, price_source
-
     def _format_product_info(self, data):
         product = data['product']
         inventory = data['inventory']
-
-        normal_price, us_price, selected_base_price, price_source = self._resolve_inventory_prices(inventory)
-
+        
         effective_price, promo_name = self.resolve_effective_price(
-            product, selected_base_price
+            product, inventory['Price']
         )
-
+        
         return {
             "name": product["Name"],
             "brand": product["Brand"],
@@ -60,10 +40,7 @@ class CosmosService:
             "nutrition": product.get("Nutritional_Facts"),
             "stock_status": "In Stock" if inventory["Quantity"] > 0 else "Out of Stock",
             "quantity": inventory["Quantity"],
-            "base_price": normal_price,
-            "us_price": us_price,
-            "price_source": price_source,
-            "selected_base_price": selected_base_price,
+            "base_price": inventory["Price"],
             "final_price": effective_price,
             "applied_promotion": promo_name,
             "image_url": product["image_url"]
@@ -131,9 +108,6 @@ class CosmosService:
 
     def resolve_effective_price(self, product_data, base_price):
         """Logic to find the best applicable promotion"""
-        if base_price is None:
-            return None, None
-
         brand = product_data.get("Brand")
         category = product_data.get("Category")
         product_id = product_data.get("Product_Id")
@@ -243,3 +217,100 @@ class CosmosService:
         if not data:
             return None
         return self._format_product_info(data[0])
+    
+    def clean_product_results(self,data: list):
+        """
+        Cleans Cosmos DB results by removing unwanted fields
+        """
+
+
+        fields_to_remove = {
+            "image_url",
+            "model_url",
+            "Height(cm)",
+            "Width(cm)",
+            "Depth(cm)",
+            "_rid",
+            "_self",
+            "_etag",
+            "_attachments",
+            "_ts"
+        }
+
+        cleaned_results = []
+
+        for item in data:
+            cleaned_item = {
+                key: value
+                for key, value in item.items()
+                if key not in fields_to_remove
+            }
+            cleaned_results.append(cleaned_item)
+
+        return cleaned_results
+
+
+    def query_executor(self, sql_query: dict, table_name: str = "products"):
+        """
+        Generic Cosmos DB Query Executor
+
+        Args:
+            sql_query: {
+                "query": "SELECT * FROM c WHERE ...",
+                "parameters": [],
+                "partition_key": optional
+            }
+            table_name: "products" | "inventory" | "promotion" | "layout"
+
+        Returns:
+            dict: query result
+        """
+
+        try:
+            # ✅ Map table name → container
+            container_map = {
+                "products": self.prod_ctr,
+                "inventory": self.inv_ctr,
+                "promotion": self.promo_ctr,
+                "layout": self.lay_ctr
+            }
+
+            container = container_map.get(table_name.lower())
+
+            if not container:
+                raise ValueError(f"Invalid table_name: {table_name}")
+
+            # ✅ Extract query data
+            query = sql_query.get("query")
+            parameters = sql_query.get("parameters", [])
+            partition_key = sql_query.get("partition_key", None)
+
+            # ✅ Validation
+            if not query or "SELECT" not in query.upper():
+                raise ValueError("Invalid or missing query")
+
+            # ✅ Execute query
+            items = list(
+                container.query_items(
+                    query=query,
+                    parameters=parameters,
+                    enable_cross_partition_query=(partition_key is None),
+                    partition_key=partition_key if partition_key else None
+                )
+            )
+
+            return {
+                "status": "success",
+                "table": table_name,
+                "query": query,
+                "parameters": parameters,
+                "count": len(items),
+                "results": self.clean_product_results(items[:20])  # safe limit
+            }
+
+        except Exception as e:
+            return {
+                "status": "error",
+                "table": table_name,
+                "message": str(e)
+            }
