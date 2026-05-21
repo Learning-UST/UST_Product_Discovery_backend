@@ -24,14 +24,45 @@ class CosmosService:
         self.promo_ctr = self.db.get_container_client("promotion")
         self.lay_ctr = self.db.get_container_client("layout")
 
+    def _price_source(self) -> str:
+        source = str(get_config_value("PRICE_SOURCE", "NORMAL")).strip().upper()
+        return "US" if source == "US" else "NORMAL"
+
+    def _currency_symbol(self) -> str:
+        configured_symbol = get_config_value("PRICE_CURRENCY_SYMBOL")
+        if configured_symbol is not None and str(configured_symbol).strip() != "":
+            return str(configured_symbol).strip()
+        return "$" if self._price_source() == "US" else "INR "
+
+    def _pick_price_value(self, product: dict, inventory: dict):
+        source = self._price_source()
+
+        if source == "US":
+            return (
+                product.get("US_Price")
+                or product.get("us_price")
+                or inventory.get("US_Price")
+                or inventory.get("us_price")
+                or inventory.get("Price")
+                or inventory.get("price")
+            )
+
+        return (
+            inventory.get("Price")
+            or inventory.get("price")
+            or product.get("Price")
+            or product.get("price")
+        )
+
     def _format_product_info(self, data):
         product = data['product']
         inventory = data['inventory']
-        
+
+        base_price = self._pick_price_value(product, inventory)
         effective_price, promo_name = self.resolve_effective_price(
-            product, inventory['Price']
+            product, base_price
         )
-        
+
         return {
             "name": product["Name"],
             "brand": product["Brand"],
@@ -40,8 +71,9 @@ class CosmosService:
             "nutrition": product.get("Nutritional_Facts"),
             "stock_status": "In Stock" if inventory["Quantity"] > 0 else "Out of Stock",
             "quantity": inventory["Quantity"],
-            "base_price": inventory["Price"],
+            "base_price": base_price,
             "final_price": effective_price,
+            "currency_symbol": self._currency_symbol(),
             "applied_promotion": promo_name,
             "image_url": product["image_url"]
         }

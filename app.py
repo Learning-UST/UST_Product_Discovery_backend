@@ -61,11 +61,12 @@ def chat():
     # embedding = get_embedding(query)
     # docs = ai_search.search_text(query, top_k=3)
     # answer = openai_service.generate_answer(query, history, docs)
-    answer,docs = shopilot.chat(message=query, history=history)
+    answer, docs, product_names = shopilot.chat(message=query, history=history)
     return jsonify({
         "query": query,
         "answer": answer,
-        "sources": docs
+        "sources": docs,
+        "product_names": product_names
     })
 
 @app.route("/api/speech-to-text", methods=["POST"])
