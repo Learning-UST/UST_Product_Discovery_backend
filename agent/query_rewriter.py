@@ -37,8 +37,8 @@ Rewritten Query:
                 system_prompt="You rewrite queries for search clarity.",
                 user_prompt=rewrite_prompt
             )
-
-            logger.info(f"Rewritten query: {rewritten}")
+            # logger.info(f"Original query: {query}")
+            # logger.info(f"Rewritten query: {rewritten}")
             return rewritten.strip()
 
         except Exception as e:

@@ -3,7 +3,7 @@ Main Script to test ShoppingAgent
 """
 
 import json
-from agents.agent import ShopilotAgent
+from services.agent_service import ShopilotAgent
 
 
 def main():

@@ -1,194 +1,173 @@
+"""
+Shopping Agent (Sequential Execution - Production Ready)
+"""
+
 import json
 import re
-from agent.retriever import Retriever
-from agent.prompt import build_context, build_prompt, format_history, SYSTEM_PROMPT
-from agent.llm_service import LLMService
 from agent.query_rewriter import QueryRewriter
+from agent.tool_registry import ai_search_tool, cosmos_query_tool
+from agent.llm_service import LLMService
 from utils.logger import get_logger
 from utils.config import get_config_value
 
 logger = get_logger()
 
-class ShoppingAgent:
+
+class ShopilotAgent:
 
     def __init__(self):
-        self.retriever = Retriever()
-        self.llm = LLMService()  # Your existing service that handles Azure connections
         self.rewriter = QueryRewriter()
+        self.llm = LLMService()
 
-    def _is_price_query(self, query: str) -> bool:
-        q = (query or "").lower()
-        keywords = ["price", "cost", "rate", "value", "discount", "mrp"]
-        return any(k in q for k in keywords)
+    def _price_source(self) -> str:
+        source = str(get_config_value("PRICE_SOURCE", "NORMAL")).strip().upper()
+        return "US" if source == "US" else "NORMAL"
 
-    def _currency_symbol(self, docs: list) -> str:
-        if docs:
-            symbol = docs[0].get("currency_symbol")
-            if symbol:
-                return str(symbol)
-
+    def _currency_symbol(self) -> str:
         configured_symbol = get_config_value("PRICE_CURRENCY_SYMBOL")
         if configured_symbol is not None and str(configured_symbol).strip() != "":
             return str(configured_symbol).strip()
+        return "$" if self._price_source() == "US" else "INR "
 
-        source = str(get_config_value("PRICE_SOURCE", "NORMAL")).strip().upper()
-        return "$" if source == "US" else "INR "
+    def _normalize_price_fields(self, item: dict) -> dict:
+        if not isinstance(item, dict):
+            return item
 
-    def _enforce_currency_symbol(self, text: str, docs: list) -> str:
-        if not text:
-            return text
+        source = self._price_source()
+        normalized = dict(item)
 
-        symbol = self._currency_symbol(docs)
-        updated = text
-
-        # Replace known doc prices first for high precision.
-        candidates = []
-        for d in docs or []:
-            for key in ["price", "discounted_price", "normal_price", "normal_discounted_price", "us_price", "us_discounted_price"]:
-                value = d.get(key)
-                if isinstance(value, (int, float)):
-                    candidates.append(f"{value:g}")
-                    candidates.append(f"{value:.2f}")
-
-        for num in sorted(set(candidates), key=len, reverse=True):
-            updated = re.sub(
-                rf"(?<!\$)(?<!₹)(?<!INR\s)(?<!USD\s)\b{re.escape(num)}\b",
-                f"{symbol}{num}",
-                updated,
-            )
-
-        # Fallback: if still no symbol, add symbol to the first plain decimal/integer.
-        if ("$" not in updated and "₹" not in updated and "INR " not in updated and "USD " not in updated):
-            updated = re.sub(
-                r"(?<!\$)(?<!₹)(?<!INR\s)(?<!USD\s)(\b\d+(?:\.\d{1,2})?\b)",
-                rf"{symbol}\1",
-                updated,
-                count=1,
-            )
-
-        return updated
-
-    def ask(self, query: str, history: list):
-        # Step 1: Rewrite query using conversation history
-        rewritten_query = self.rewriter.rewrite(query, history)
-
-        logger.info(f"Original Query: {query}")
-        logger.info(f"Rewritten Query: {rewritten_query}")
-
-        # Step 2: Define tools/functions for the LLM Router
-        tools = [
-            {
-                "type": "function",
-                "function": {
-                    "name": "retrieve_products",
-                    "description": "Call this to search the product inventory database for specific items, tags, nutritional values (like gluten-free, low calorie), categories, or pricing.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "search_term": {
-                                "type": "string",
-                                "description": "The optimized search keyword extracted from the user's intent."
-                            }
-                        },
-                        "required": ["search_term"]
-                    }
-                }
-            }
-        ]
-
-        # Step 3: Format conversation message history for the router
-        messages = [
-            {"role": "system", "content": "You are a smart retail assistant. You can handle generalized conversations directly. If the user is asking about product data, inventory, dietary preferences (like gluten-free), or specific properties (like calories), you MUST use the 'retrieve_products' tool first. Mention price only when the user asks for price/cost/value/discount. When you mention any price, never return a bare number: always include the currency symbol from 'currency_symbol' and prefer 'display_price'/'display_discounted_price' fields when available."}
-        ]
-        
-        for msg in history:
-            role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", "user")
-            content = msg.get("content") if isinstance(msg, dict) else getattr(msg, "content", "")
-            messages.append({"role": role, "content": content})
-            
-        messages.append({"role": "user", "content": rewritten_query})
-
-        # Step 4: Use your existing LLMService to generate the tool routing decision safely
-        # We pass the tools structural arguments directly to your existing completion generator wrapper
-        try:
-            # Check if your LLMService supports passing raw tools natively
-            # If your llm.generate method doesn't take tools, we call its internal client object safely:
-            if hasattr(self.llm, 'client') and self.llm.client:
-                response = self.llm.client.chat.completions.create(
-                    model=self.llm.model_name if hasattr(self.llm, 'model_name') else "gpt-4o-mini",
-                    messages=messages,
-                    tools=tools,
-                    tool_choice="auto"
-                )
-            else:
-                # If your service initializes via the AzureOpenAI sdk client class directly:
-                from openai import AzureOpenAI
-                import os
-                
-                # Instantiating locally using standard environment configurations mapped by your deployment scripts
-                azure_client = AzureOpenAI(
-                    azure_endpoint=get_config_value("AZURE_OPENAI_ENDPOINT"),
-                    api_key=get_config_value("AZURE_OPENAI_API_KEY"),
-                    api_version="2024-02-01"
-                )
-                response = azure_client.chat.completions.create(
-                    model=get_config_value("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini"),
-                    messages=messages,
-                    tools=tools,
-                    tool_choice="auto"
-                )
-        except Exception as e:
-            logger.error(f"Failed router execution sequence: {str(e)}")
-            # Robust fallback: If tool orchestration fails completely under pressure, default gracefully to standard sequential retrieval
-            docs = self.retriever.retrieve(rewritten_query)
-            prompt = build_prompt(query, history, docs)
-            fallback_res = self.llm.generate(SYSTEM_PROMPT, prompt)
-            if self._is_price_query(query):
-                fallback_res = self._enforce_currency_symbol(fallback_res, docs)
-            return fallback_res, docs
-
-        response_message = response.choices[0].message
-        tool_calls = response_message.tool_calls
-        docs = []
-
-        # Step 5: Process Agent Router Decision Tree
-        if tool_calls:
-            logger.info("Agent router triggered inventory retrieval path.")
-            messages.append(response_message)
-
-            for tool_call in tool_calls:
-                function_args = json.loads(tool_call.function.arguments)
-                search_term = function_args.get("search_term", rewritten_query)
-                
-                # Execute original retrieval logic 
-                docs = self.retriever.retrieve(search_term)
-                logger.info(f"Retrieved docs for agent: {docs}")
-
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "name": "retrieve_products",
-                    "content": json.dumps(docs)
-                })
-
-            # Fetch the final summary execution response from Azure OpenAI
-            if 'azure_client' in locals():
-                second_response = azure_client.chat.completions.create(
-                    model=get_config_value("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini"),
-                    messages=messages
-                )
-            else:
-                second_response = self.llm.client.chat.completions.create(
-                    model=self.llm.model_name if hasattr(self.llm, 'model_name') else "gpt-4o-mini",
-                    messages=messages
-                )
-
-            final_text = second_response.choices[0].message.content
-            if self._is_price_query(query):
-                final_text = self._enforce_currency_symbol(final_text, docs)
-            return final_text, docs
-
+        if source == "US":
+            price = normalized.get("us_price")
+            discounted = normalized.get("us_discounted_price")
+            if price is None:
+                price = normalized.get("US_Price")
+            if discounted is None:
+                discounted = normalized.get("US_Discounted_Price")
         else:
-            # Generalized query route (No database search needed!)
-            logger.info("Agent handled query as a generalized question directly.")
-            return response_message.content, []
+            price = normalized.get("price")
+            discounted = normalized.get("discounted_price")
+            if price is None:
+                price = normalized.get("Price")
+            if discounted is None:
+                discounted = normalized.get("Discounted_Price")
+
+        if price is not None:
+            normalized["display_price"] = price
+        if discounted is not None:
+            normalized["display_discounted_price"] = discounted
+
+        normalized["currency_symbol"] = self._currency_symbol()
+        return normalized
+
+    def _normalize_result_payload(self, payload: dict) -> dict:
+        if not isinstance(payload, dict):
+            return payload
+
+        normalized = dict(payload)
+        results = normalized.get("results")
+        if isinstance(results, list):
+            normalized["results"] = [self._normalize_price_fields(r) for r in results]
+        return normalized
+
+    def _extract_product_names(self, answer_text: str) -> list:
+        """Extract only the product names that are actually visible in the final answer."""
+        if not answer_text:
+            return []
+
+        product_names = []
+        seen = set()
+
+        for raw_line in answer_text.splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+
+            # Remove leading numbering like "1." or "2)"
+            line = re.sub(r"^\d+[\.)]\s*", "", line)
+
+            # Skip intro/outro sentences
+            if line.lower().startswith(("here are", "these options", "these are", "you can")):
+                continue
+
+            candidate = None
+
+            # Handle formats like: "Product Name by Brand - Description"
+            if " - " in line:
+                candidate = line.split(" - ", 1)[0].strip()
+            # Handle formats like: "Product Name: Description"
+            elif ":" in line:
+                candidate = line.split(":", 1)[0].strip()
+            else:
+                candidate = line.strip()
+
+            # If we still have "Product Name by Brand", keep only the product name
+            if " by " in candidate.lower():
+                candidate = re.split(r"\s+by\s+", candidate, flags=re.IGNORECASE)[0].strip()
+
+            # Final cleanup for short/obvious noise
+            if candidate and len(candidate) > 2 and candidate not in seen:
+                product_names.append(candidate)
+                seen.add(candidate)
+
+        logger.info(f"Extracted product names from answer: {product_names}")
+        return product_names
+
+    def chat(self, message: str, history: list) -> tuple:
+        logger.info(f"Received message: {message}")
+        history = history or []
+        logger.info(f"Conversation history length: {len(history)}")
+        try:
+            # ✅ STEP 1: Rewrite user query (context aware)
+            rewritten_query = self.rewriter.rewrite(message, history)
+            logger.info(f"[STEP 1] Rewritten Query: {rewritten_query}")
+
+            # ✅ STEP 2: AI SEARCH (Semantic)
+            ai_result = ai_search_tool(rewritten_query)
+            ai_result = self._normalize_result_payload(ai_result)
+            logger.info(f"[STEP 2] AI Search Done")
+            logger.info(f"AI Search Result: {json.dumps(ai_result)}")
+
+            # ✅ STEP 3: Cosmos Query
+            cosmos_result = cosmos_query_tool(rewritten_query, json.dumps(ai_result))
+            cosmos_result = self._normalize_result_payload(cosmos_result)
+            logger.info(f"[STEP 4] Cosmos Query Done")
+            logger.info(f"Cosmos DB Result: {json.dumps(cosmos_result)}")
+            # ✅ STEP 5: Final Answer Generation
+            final_prompt = f"""
+                You are a product assistant.
+
+                Use the below data to answer the user.
+
+                User Query:
+                {rewritten_query}
+
+                AI Search Results:
+                {json.dumps(ai_result)}
+
+                Cosmos DB Results:
+                {json.dumps(cosmos_result)}
+
+                Instructions:
+                - Combine insights from both sources
+                # - Include only the product name and description in the response.
+                - If the user asks for price, use display_price/display_discounted_price with currency_symbol.
+                - Prioritize accurate product info
+                - Be clear and concise
+                - If no data → "No relevant product information found"
+                """
+
+            final_response = self.llm.generate(
+                system_prompt="You are a helpful shopping assistant",
+                user_prompt=final_prompt
+            )
+
+            logger.info(f"[STEP 5] Final Answer generated")
+
+            # ✅ Extract only the product names shown in the answer for frontend highlighting
+            product_names = self._extract_product_names(final_response)
+
+            return final_response, ai_result, product_names
+
+        except Exception as e:
+            logger.exception("ShoppingAgent failed")
+            return "Something went wrong while processing your request.", [], []

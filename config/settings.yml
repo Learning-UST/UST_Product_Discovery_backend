@@ -1,0 +1,18 @@
+#Azure
+
+llm: openai
+vectordb: ai_search
+database: cosmos
+
+# # AWS
+
+# llm: bedrock
+# vectordb: opensearch
+# database: dynamodb
+
+
+# #Hybrid
+
+# llm: openai
+# vectordb: opensearch
+# database: mongodb

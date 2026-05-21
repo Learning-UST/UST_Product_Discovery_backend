@@ -1,18 +1,47 @@
 import json
-from services.cosmos_service import CosmosService
-from services.openai_service import OpenAIService
-from services.search_service import AiSearch
 from utils.logger import get_logger
+from core.vectordbs.ai_search import AISearch
+from core.vectordbs.opensearch import OpenSearchVectorDB
+from core.databases.cosmos import CosmosService
+from core.llms.azure_openai import AzureOpenAIService
+from core.llms.bedrock import BedrockLLMService
+from core.databases.mongodb import MongoDBService
+
 
 logger = get_logger()
 
 
 class ProductSearchTools:
 
-    def __init__(self):
-        self.cosmos = CosmosService()
-        self.openai = OpenAIService()
-        self.ai_search = AiSearch()
+    def __init__(self,cloud_provider:str="azure"):
+        services = self._initialize_services(cloud_provider)
+        self.llm = services["llm"]
+        self.vectordb = services["vectordb"]
+        self.database = services["database"]
+
+    def _initialize_services(self, cloud_provider: str):
+        if cloud_provider.lower() == "azure":
+            return self._initialize_azure_services()
+        elif cloud_provider.lower() == "aws":
+            return self._initialize_aws_services()
+        else:
+            raise ValueError(f"Unsupported cloud provider: {cloud_provider}")
+
+    def _initialize_azure_services(self):
+         # Initialize services (can be extended to use Resolver or Dependency Injection)
+        return {
+            "llm": AzureOpenAIService(),
+            "vectordb": AISearch(),
+            "database": CosmosService()
+        }
+    
+    def _initialize_aws_services(self):
+            # Initialize services (can be extended to use Resolver or Dependency Injection)
+            return {
+                "llm": BedrockLLMService(),
+                "vectordb": OpenSearchVectorDB(),
+                "database": MongoDBService()
+            }
 
     # ✅ Tool 1: Cosmos (Structured Search)
     def cosmos_query(self, query: str, content: str) -> dict:
@@ -22,7 +51,7 @@ class ProductSearchTools:
 
         try:
             logger.info(f"Received Cosmos query: {query}")
-            query_response = self.openai.query_builder(query,content)
+            query_response = self.llm.query_builder(query,content)
             logger.info(f"Query builder response: {json.dumps(query_response)}")
 
             if query_response["status"] != "success":
@@ -65,7 +94,7 @@ class ProductSearchTools:
 
         try:
             logger.info(f"Received AI Search query: {query}")
-            docs = self.ai_search.search_text(query, top_k=5)
+            docs = self.vectordb.search_text(query, top_k=5)
 
             return {
                 "status": "success",

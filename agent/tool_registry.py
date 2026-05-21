@@ -1,5 +1,5 @@
 # Initialize once
-from agents.tools import ProductSearchTools
+from agent.tools import ProductSearchTools
 
 tools_service = ProductSearchTools()
 

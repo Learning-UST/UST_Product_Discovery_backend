@@ -1,15 +1,9 @@
 from flask import Flask, request, jsonify
-from services.search_service import AiSearch
-from services.openai_service import OpenAIService
-from services.agent_service import ShoppingAgent
-from services.voice_service import transcribe_audio
-from services.cosmos_service import CosmosService
 from flask_cors import CORS
 from utils.config import get_config_value
 import string
 from utils.logger import get_logger
-from agents.agent import ShopilotAgent
-
+from agent.shopping_agent import ShopilotAgent
 import qrcode
 import io
 import requests as http_requests
@@ -22,18 +16,6 @@ cors_origins = get_config_value("CORS_ALLOWED_ORIGINS", "*")
 if isinstance(cors_origins, str) and "," in cors_origins:
     cors_origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
 CORS(app, resources={r"/api/*": {"origins": cors_origins}})
-
-# ✅ Initialize services (once)
-ai_search = AiSearch()
-agent=ShoppingAgent()
-shopilot=ShopilotAgent()
-openai_service = OpenAIService()
-try:
-    agent_manager = ShoppingAgent()
-except Exception:
-    agent_manager = None
-cosmos = CosmosService()
-
 
 def _clean_query(q):
     return q.strip().rstrip(string.punctuation).strip() if q else q
@@ -87,32 +69,6 @@ def get_speech_token():
         "region": region
     })
 
-
-@app.route("/api/voice-query", methods=["POST"])
-def voice_query():
-    if agent_manager is None:
-        return jsonify({"error": "Agent service is not configured"}), 503
-
-    import tempfile
-    audio_file = request.files['audio']
-    with tempfile.NamedTemporaryFile(suffix='.wav', delete=True) as tmp:
-        audio_file.save(tmp.name)
-        user_text = transcribe_audio(tmp.name)
-
-    # 2. Start Agentic Thread
-    client = agent_manager.project_client
-    thread = client.agents.create_thread()
-    client.agents.create_message(thread_id=thread.id, role="user", content=user_text)
-
-    # 3. Run Agent (Agent decides to use Search or Cosmos tools)
-    agent_id = get_config_value("AGENT_ID")
-    if not agent_id:
-        return jsonify({"error": "AGENT_ID is missing in configuration"}), 500
-    run = client.agents.create_and_process_run(thread_id=thread.id, agent_id=agent_id)
-
-    # 4. Fetch final response
-    messages = client.agents.list_messages(thread_id=thread.id)
-    return jsonify({"answer": messages.data[0].content[0].text.value})
 
 @app.route("/api/product-click/<upc>", methods=["GET"])
 def handle_click(upc):
