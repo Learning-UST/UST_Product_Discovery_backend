@@ -3,6 +3,7 @@ Shopping Agent (Sequential Execution - Production Ready)
 """
 
 import json
+import re
 from agents.query_rewriter import QueryRewriter
 from agents.tool_registry import ai_search_tool, cosmos_query_tool
 from services.openai_service import OpenAIService
@@ -69,30 +70,47 @@ class ShopilotAgent:
             normalized["results"] = [self._normalize_price_fields(r) for r in results]
         return normalized
 
-    def _extract_product_names(self, ai_result: dict, cosmos_result: dict) -> list:
-        """Extract unique product names from both search results for frontend highlighting"""
+    def _extract_product_names(self, answer_text: str) -> list:
+        """Extract only the product names that are actually visible in the final answer."""
+        if not answer_text:
+            return []
+
         product_names = []
         seen = set()
 
-        # Extract from AI Search results
-        ai_results = ai_result.get("results", [])
-        if isinstance(ai_results, list):
-            for item in ai_results:
-                name = item.get("name")
-                if name and name not in seen:
-                    product_names.append(name)
-                    seen.add(name)
+        for raw_line in answer_text.splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
 
-        # Extract from Cosmos results
-        cosmos_results = cosmos_result.get("results", [])
-        if isinstance(cosmos_results, list):
-            for item in cosmos_results:
-                name = item.get("name") or item.get("Name")
-                if name and name not in seen:
-                    product_names.append(name)
-                    seen.add(name)
+            # Remove leading numbering like "1." or "2)"
+            line = re.sub(r"^\d+[\.)]\s*", "", line)
 
-        logger.info(f"Extracted product names: {product_names}")
+            # Skip intro/outro sentences
+            if line.lower().startswith(("here are", "these options", "these are", "you can")):
+                continue
+
+            candidate = None
+
+            # Handle formats like: "Product Name by Brand - Description"
+            if " - " in line:
+                candidate = line.split(" - ", 1)[0].strip()
+            # Handle formats like: "Product Name: Description"
+            elif ":" in line:
+                candidate = line.split(":", 1)[0].strip()
+            else:
+                candidate = line.strip()
+
+            # If we still have "Product Name by Brand", keep only the product name
+            if " by " in candidate.lower():
+                candidate = re.split(r"\s+by\s+", candidate, flags=re.IGNORECASE)[0].strip()
+
+            # Final cleanup for short/obvious noise
+            if candidate and len(candidate) > 2 and candidate not in seen:
+                product_names.append(candidate)
+                seen.add(candidate)
+
+        logger.info(f"Extracted product names from answer: {product_names}")
         return product_names
 
     def chat(self, message: str, history: list) -> tuple:
@@ -166,8 +184,8 @@ Instructions:
 
             logger.info(f"[STEP 5] Final Answer generated")
 
-            # ✅ Extract product names for frontend highlighting
-            product_names = self._extract_product_names(ai_result, cosmos_result)
+            # ✅ Extract only the product names shown in the answer for frontend highlighting
+            product_names = self._extract_product_names(final_response)
 
             return final_response, ai_result, product_names
 
