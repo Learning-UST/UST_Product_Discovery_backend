@@ -12,68 +12,27 @@ from core.databases.mongodb import MongoDBService
 
 
 class Resolver:
-
-    # ✅ ----------------------------
-    # LLM
-    # ✅ ----------------------------
-    @staticmethod
-    def get_llm(name: str):
-        mapping = {
-            "openai": AzureOpenAIService,
-            "bedrock": BedrockLLMService
-        }
-
-        if name not in mapping:
-            raise ValueError(f"Unsupported LLM: {name}")
-
-        return mapping[name]()  # ✅ instance
-
-
-    # ✅ ----------------------------
-    # Vector DB
-    # ✅ ----------------------------
-    @staticmethod
-    def get_vectordb(name: str):
-        mapping = {
-            "ai_search": AISearch,
-            "opensearch": OpenSearchVectorDB
-        }
-
-        if name not in mapping:
-            raise ValueError(f"Unsupported Vector DB: {name}")
-
-        return mapping[name]()  # ✅ instance
-
-
-    # ✅ ----------------------------
-    # Database (NoSQL)
-    # ✅ ----------------------------
-    @staticmethod
-    def get_database(name: str):
-        mapping = {
-            "cosmos": CosmosService,
-            "mongodb": MongoDBService
-        }
-
-        if name not in mapping:
-            raise ValueError(f"Unsupported Database: {name}")
-
-        return mapping[name]()  # ✅ instance
-    
-    @staticmethod
-    def get_azure_service():
-       services = {
+    SERVICES = {
+        "azure": {
             "llm": AzureOpenAIService,
             "vectordb": AISearch,
             "database": CosmosService
-       }
-       return services
-    
-    @staticmethod
-    def get_aws_service():
-       services = {
+        },
+        "aws": {
             "llm": BedrockLLMService,
             "vectordb": OpenSearchVectorDB,
             "database": MongoDBService
-       }
-       return services
+        }
+    }
+
+    @staticmethod
+    def resolve(cloud_provider: str):
+        if cloud_provider not in Resolver.SERVICES:
+            raise ValueError(f"Unsupported cloud provider: {cloud_provider}")
+
+        services = Resolver.SERVICES[cloud_provider]
+
+        # Instantiate all services
+        return {
+            key: service() for key, service in services.items()
+        }

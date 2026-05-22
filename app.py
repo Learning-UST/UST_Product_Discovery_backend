@@ -4,10 +4,13 @@ from utils.config import get_config_value
 import string
 from utils.logger import get_logger
 from agent.shopping_agent import ShopilotAgent
+from factory.resolver import Resolver
 import qrcode
 import io
 import requests as http_requests
 from flask import send_file
+from flask import g
+
 
 logger=get_logger()
 app = Flask(__name__)
@@ -17,8 +20,45 @@ if isinstance(cors_origins, str) and "," in cors_origins:
     cors_origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
 CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
+cloud_resolver = Resolver()
+
+
+def get_services(cloud_provider):
+    services = Resolver.resolve(cloud_provider)
+
+    g.llm_service = services["llm"]
+    g.vectordb_service = services["vectordb"]
+    g.database_service = services["database"]
+    g.agent = ShopilotAgent(cloud_provider)
+
+
 def _clean_query(q):
     return q.strip().rstrip(string.punctuation).strip() if q else q
+
+
+@app.route("/api/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok", "message": "Shopilot Agent is running!"})
+
+@app.route("/api/set-agent", methods=["POST"])
+def set_agent():
+    data = request.json
+    cloud_provider = data.get("cloud_provider", "azure")
+
+    try:
+        # Resolve services
+        get_services(cloud_provider)
+
+        return jsonify({
+            "status": "ok",
+            "message": "Agent configured!"
+        })
+
+    except ValueError as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 400
 
 
 @app.route("/api/search", methods=["POST"])
@@ -27,7 +67,7 @@ def search():
     query = _clean_query(data.get("query"))
 
     # embedding = get_embedding(query)
-    results = ai_search.search_text(query, top_k=3)
+    results = g.vectordb_service.search_text(query, top_k=3)
 
     return jsonify({
         "query": query,
@@ -43,7 +83,7 @@ def chat():
     # embedding = get_embedding(query)
     # docs = ai_search.search_text(query, top_k=3)
     # answer = openai_service.generate_answer(query, history, docs)
-    answer, docs, product_names = shopilot.chat(message=query, history=history)
+    answer, docs, product_names = g.agent.chat(message=query, history=history)
     return jsonify({
         "query": query,
         "answer": answer,
@@ -74,7 +114,7 @@ def get_speech_token():
 def handle_click(upc):
     """Instant retrieval endpoint for the Digital Twin clicks"""
     try:
-        details = cosmos.get_enriched_product_info(upc)
+        details = g.database_service.get_enriched_product_info(upc)
         return jsonify(details)
     except Exception as e:
         return jsonify({"error": "Product data incomplete", "details": str(e)}), 404
@@ -84,7 +124,7 @@ def agent_query():
     query = _clean_query(data.get("query"))
     
     # This now calls the logic where the AI DECIDES which tool to use
-    answer = openai_service.generate_agentic_answer(query)
+    answer = g.llm_service.generate_agentic_answer(query)
     
     return jsonify({
         "query": query,
@@ -93,7 +133,7 @@ def agent_query():
 
 @app.route("/api/get-shelf-twin/<shelf_id>", methods=["GET"])
 def get_shelf_twin(shelf_id):
-    layout = cosmos.get_shelf_layout(shelf_id)
+    layout = g.database_service.get_shelf_layout(shelf_id)
     # This layout contains the 'rows' and 'products' your React grid needs
     return jsonify(layout)
 
@@ -106,7 +146,7 @@ def get_direct_product(upc):
     try:
         # This uses the 'enriched' method we built in CosmosService
         # It handles: 1. Metadata 2. Inventory 3. Promotion Logic
-        product_info = cosmos.get_enriched_product_info(str(upc))
+        product_info = g.database_service.get_enriched_product_info(str(upc))
         
         return jsonify({
             "status": "success",
@@ -139,7 +179,7 @@ def generate_qr(shelf_id):
 def get_all_products():
     """Returns all products from the products Cosmos DB container."""
     try:
-        products = cosmos.get_all_products()
+        products = g.database_service.get_all_products()
         return jsonify({
             "status": "success",
             "count": len(products),
@@ -161,7 +201,7 @@ def get_product(porodcut_name):
     try:
         # This uses the 'enriched' method we built in CosmosService
         # It handles: 1. Metadata 2. Inventory 3. Promotion Logic
-        product_info = cosmos.get_product_by_name(str(porodcut_name))
+        product_info = g.database_service.get_product_by_name(str(porodcut_name))
         
         return jsonify({
             "status": "success",
@@ -184,7 +224,7 @@ def get_shelf_qr(shelf_id):
     """
     try:
         # 1. Verify shelf exists in Cosmos (Optional but good for data integrity)
-        layout = cosmos.get_shelf_layout(shelf_id)
+        layout = g.database_service.get_shelf_layout(shelf_id)
         
         # 2. Generate QR Data
         # In a real app, this would be a deep link: https://retail-app.com/shelf/15

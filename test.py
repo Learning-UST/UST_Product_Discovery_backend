@@ -2,6 +2,10 @@
 from core.databases.cosmos import CosmosService
 from core.llms.azure_openai import AzureOpenAIService
 
+def search_products(query: str) -> dict:
+    cosmos = CosmosService()
+    return cosmos.get_enriched_product_info_by_name(query)
+
 def test_get_all_products():
     cosmos = CosmosService()
     result = cosmos.get_all_products()
@@ -36,7 +40,7 @@ def test_query_exicuter():
 
 
 def test_llm_response():
-    llm = LLMService()
+    llm = AzureOpenAIService()
     system_prompt = "You are a helpful assistant."
     user_prompt = "What is the capital of France?"
     
@@ -82,8 +86,8 @@ def test_get_product_by_name():
     print(results)
 
 if __name__ == "__main__":
-    # print("Testing search_products with valid query:")
-    # test_search_products()
+    print("Testing search_products with valid query:")
+    test_search_products()
     
     # print("\nTesting search_products with no results:")
     # test_search_products_no_results()
@@ -103,8 +107,8 @@ if __name__ == "__main__":
     # print("\nTesting Cosmos DB query executor:")
     # test_query_exicuter()
 
-    print("\nTesting LLM query builder:")
-    test_query_builder()
+    # print("\nTesting LLM query builder:")
+    # test_query_builder()
 
     # print("\nTesting get_all_products:")
     # test_get_all_products()
