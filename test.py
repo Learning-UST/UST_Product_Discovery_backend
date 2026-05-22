@@ -2,16 +2,17 @@
 from core.databases.cosmos import CosmosService
 from core.llms.azure_openai import AzureOpenAIService
 
+def test_get_all_products():
+    cosmos = CosmosService()
+    result = cosmos.get_all_products()
+    print(result)
+
+
 def test_query_builder():
     openai_service = AzureOpenAIService()
     cosmos= CosmosService() 
 
-    message = """{
-"Category": "instant noodles",
-  "Calories": {
-    "max": 300
-  }
-}"""
+    message = "Slect the product which brand name is Nissin ."
     result = openai_service.query_builder(message)
     if result["status"] =="success":
         table=result["table"]
@@ -69,8 +70,8 @@ def test_resolve_effective_price():
 
     if product and inventory:
         base_price = inventory.get("Price", 0)
-        effective_price, promo_name = cosmos.resolve_effective_price(product, base_price)
-        print(f"Base Price: {base_price}, Effective Price: {effective_price}, Promotion: {promo_name}")
+        result = cosmos.resolve_effective_price(product, base_price)
+        print(f"Base Price: {base_price}, Effective Price: {result['effective_price']}, Promotion: {result['promotion_name']}")
     else:
         print("Product or inventory information is missing.")
 
@@ -104,3 +105,12 @@ if __name__ == "__main__":
 
     print("\nTesting LLM query builder:")
     test_query_builder()
+
+    # print("\nTesting get_all_products:")
+    # test_get_all_products()
+
+    # print("\nTesting get_product_and_inventory:")
+    # test_get_product_and_inventory()
+
+    # print("\nTesting get_product_by_name:")
+    # test_get_product_by_name()

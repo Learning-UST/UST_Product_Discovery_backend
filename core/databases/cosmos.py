@@ -52,6 +52,40 @@ class CosmosService(BaseDatabase):
         if not container:
             raise ValueError(f"Invalid table: {table_name}")
         return container
+    
+    # ✅ ----------------------------
+    # Data cleaning
+    # ✅ ----------------------------
+    @staticmethod
+    def clean_product_results(data: list):
+        """
+        Cleans Cosmos DB results by removing unwanted fields
+        """
+
+
+        fields_to_remove = {
+            "model_url",
+            "Height(cm)",
+            "Width(cm)",
+            "Depth(cm)",
+            "_rid",
+            "_self",
+            "_etag",
+            "_attachments",
+            "_ts"
+        }
+
+        cleaned_results = []
+
+        for item in data:
+            cleaned_item = {
+                key: value
+                for key, value in item.items()
+                if key not in fields_to_remove
+            }
+            cleaned_results.append(cleaned_item)
+
+        return cleaned_results
 
     # ✅ ----------------------------
     # Base methods
@@ -90,7 +124,7 @@ class CosmosService(BaseDatabase):
                 "status": "success",
                 "table": table_name,
                 "count": len(items),
-                "results": self.clean_results(items[:20])
+                "results": self.clean_product_results(items[:20])
             }
 
         except Exception as e:
@@ -179,10 +213,10 @@ class CosmosService(BaseDatabase):
         }
 
         result = self.query_executor(query, "promotion")
-
         promos = result.get("results", [])
 
         if not promos:
+            logger.info(f"No applicable promotions found for product: {product_data.get('Name')}")
             return {"effective_price": base_price, "promotion_name": None}
 
         promos.sort(key=lambda x: x.get("Priority", 999))
@@ -191,6 +225,8 @@ class CosmosService(BaseDatabase):
         discount = best.get("Discount_Percentage", 0)
         price = round(base_price * (1 - discount / 100), 2)
 
+        logger.info(f"Base Price: {base_price}, Discount: {discount}%, Effective Price: {price}")
+        logger.info(f"Applied Promotion: {best.get('Promotion_Name')})")
         return {
             "effective_price": price,
             "promotion_name": best.get("Promotion_Name")
@@ -200,7 +236,7 @@ class CosmosService(BaseDatabase):
 
         data = self.get_product_and_inventory(upc)
 
-        if not data["product"]:
+        if not data["product"] and not data["inventory"]:
             return None
 
         base_price = pick_price_value(data["product"], data["inventory"])
@@ -208,40 +244,85 @@ class CosmosService(BaseDatabase):
 
         return format_product_info(data=data, promo=promo)
 
-    def get_product_by_name(self, product_name):
+    def get_product_by_name(self, product_name: str):
+        """
+        Query products by name (case-insensitive partial match)
+        and fetch corresponding inventory for each product.
+        
+        Returns:
+            list of {
+                "product": {...},
+                "inventory": {...}
+            }
+        """
 
-        query = {
-            "query": """
-            SELECT * FROM c
-            WHERE CONTAINS(LOWER(c.Name), LOWER(@name))
-            """,
-            "parameters": [{"name": "@name", "value": product_name}]
-        }
+        # ✅ 1. Query matching products
+        product_query = """
+        SELECT * FROM c
+        WHERE CONTAINS(LOWER(c.Name), LOWER(@name))
+        """
 
-        result = self.query_executor(query, "products")
-        products = result.get("results", [])
+        product_params = [
+            {"name": "@name", "value": product_name}
+        ]
 
-        final = []
+        product_res = self.query_executor(
+            {"query": product_query, "parameters": product_params},
+            table_name="products"
+        )
 
+        products = product_res.get("results", [])
+
+        if not products:
+            return []
+
+        results = []
+
+        # ✅ 2. Fetch inventory for each product
         for product in products:
+            upc = str(product.get("upc") or product.get("UPC") or "")
 
-            upc = str(product.get("upc") or "")
+            if not upc:
+                # fallback if UPC missing
+                results.append({
+                    "product": product,
+                    "inventory": None
+                })
+                continue
 
-            data = self.get_product_and_inventory(upc)
+            inventory_query = """
+            SELECT * FROM c 
+            WHERE c.upc = @upc OR c.id = @inv_id
+            """
 
-            final.append(data)
+            inventory_params = [
+                {"name": "@upc", "value": upc},
+                {"name": "@inv_id", "value": f"INV_{upc}"}
+            ]
 
-        return final
+            inventory_res = self.query_executor(
+                {"query": inventory_query, "parameters": inventory_params},
+                table_name="inventory"
+            )
+
+
+            results.append({
+                "product": product,
+                "inventory": inventory_res.get("results", [None])[0]
+            })
+
+        return results
+
 
     def get_enriched_product_info_by_name(self, product_name):
 
         data = self.get_product_by_name(product_name)
-
+        logger.info(f"Products found for name '{product_name}': {len(data)}")
         if not data:
             return None
 
         item = data[0]
-
+        logger.info(f"Using product with UPC: {item['product'].get('upc') or item['product'].get('UPC')}")
         base_price = pick_price_value(item["product"], item["inventory"])
         promo = self.resolve_effective_price(item["product"], base_price)
 

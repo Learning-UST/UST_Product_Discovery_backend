@@ -119,7 +119,7 @@ def currency_symbol() -> str:
         return str(configured_symbol).strip()
     return "$" if price_source() == "US" else "INR "
 
-def pick_price_value(self, product: dict, inventory: dict):
+def pick_price_value(product: dict, inventory: dict):
     source = price_source()
 
     if source == "US":
