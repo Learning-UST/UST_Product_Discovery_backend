@@ -5,7 +5,7 @@ Shopping Agent (Sequential Execution - Production Ready)
 import json
 from agent.tool_registry import ai_search_tool, cosmos_query_tool
 from utils.logger import get_logger
-from core.prompts import QUERY_REWRITER_SYSTEM_PROMPT,FINAL_ANSWER_SYSTEM_PROMPT
+from core.prompts import REWRITE_SYSTEM_PROMPT,FINAL_ANSWER_SYSTEM_PROMPT
 from core.utils import extract_product_names, normalize_result_payload
 from agent.tools import ProductSearchTools
 
@@ -37,7 +37,7 @@ class ShopilotAgent:
 
         try:
             rewritten = self.tools.llm.generate(
-                system_prompt=QUERY_REWRITER_SYSTEM_PROMPT,
+                system_prompt=REWRITE_SYSTEM_PROMPT,
                 user_prompt=rewrite_prompt
             )
             # logger.info(f"Original query: {query}")
