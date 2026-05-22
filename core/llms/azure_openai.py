@@ -37,6 +37,7 @@ class AzureOpenAIService(BaseLLM):
         )
 
         return response.choices[0].message.content
+    
 
     def get_embedding(self, text: str):
 

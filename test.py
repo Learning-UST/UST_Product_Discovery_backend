@@ -1,11 +1,9 @@
 
-from tools.rag_tools import search_products
-from services.cosmos_service import CosmosService
-from services.openai_service import OpenAIService
-from agent.llm_service import LLMService
+from core.databases.cosmos import CosmosService
+from core.llms.azure_openai import AzureOpenAIService
 
 def test_query_builder():
-    openai_service = OpenAIService()
+    openai_service = AzureOpenAIService()
     cosmos= CosmosService() 
 
     message = """{
