@@ -20,20 +20,64 @@ if isinstance(cors_origins, str) and "," in cors_origins:
     cors_origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
 CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
-cloud_resolver = Resolver()
+_active_cloud_provider = str(get_config_value("CLOUD_PROVIDER", "azure")).strip().lower()
+_active_services = None
 
 
-def get_services(cloud_provider):
-    services = Resolver.resolve(cloud_provider)
+def _configure_services(cloud_provider):
+    global _active_services, _active_cloud_provider
+    provider = str(cloud_provider or "azure").strip().lower()
+    services = Resolver.resolve(provider)
+    _active_services = {
+        "llm_service": services["llm"],
+        "vectordb_service": services["vectordb"],
+        "database_service": services["database"],
+        "agent": ShopilotAgent(provider)
+    }
+    _active_cloud_provider = provider
 
-    g.llm_service = services["llm"]
-    g.vectordb_service = services["vectordb"]
-    g.database_service = services["database"]
-    g.agent = ShopilotAgent(cloud_provider)
+
+def _ensure_services():
+    global _active_services
+    if _active_services is None:
+        _configure_services(_active_cloud_provider)
+    return _active_services
+
+
+@app.before_request
+def _bind_request_services():
+    services = _ensure_services()
+    g.llm_service = services["llm_service"]
+    g.vectordb_service = services["vectordb_service"]
+    g.database_service = services["database_service"]
+    g.agent = services["agent"]
 
 
 def _clean_query(q):
     return q.strip().rstrip(string.punctuation).strip() if q else q
+
+
+def _normalize_product_lookup_id(value):
+    """
+    Accepts UPC values and internal identifiers like SKU_<upc>/INV_<upc>.
+    Returns the canonical UPC candidate used by product detail methods.
+    """
+    raw = str(value or "").strip()
+    upper = raw.upper()
+    if upper.startswith("SKU_") or upper.startswith("INV_"):
+        return raw.split("_", 1)[1] if "_" in raw else raw
+    return raw
+
+
+def _looks_like_product_identifier(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return False
+    upper = raw.upper()
+    if upper.startswith("SKU_") or upper.startswith("INV_"):
+        return True
+    # UPCs in this dataset are numeric.
+    return raw.isdigit()
 
 
 @app.route("/api/health", methods=["GET"])
@@ -47,11 +91,12 @@ def set_agent():
 
     try:
         # Resolve services
-        get_services(cloud_provider)
+        _configure_services(cloud_provider)
 
         return jsonify({
             "status": "ok",
-            "message": "Agent configured!"
+            "message": "Agent configured!",
+            "cloud_provider": _active_cloud_provider
         })
 
     except ValueError as e:
@@ -114,7 +159,10 @@ def get_speech_token():
 def handle_click(upc):
     """Instant retrieval endpoint for the Digital Twin clicks"""
     try:
-        details = g.database_service.get_enriched_product_info(upc)
+        lookup_id = _normalize_product_lookup_id(upc)
+        details = g.database_service.get_enriched_product_info(lookup_id)
+        if not details:
+            return jsonify({"error": "Product not found"}), 404
         return jsonify(details)
     except Exception as e:
         return jsonify({"error": "Product data incomplete", "details": str(e)}), 404
@@ -122,9 +170,13 @@ def handle_click(upc):
 def agent_query():
     data = request.json
     query = _clean_query(data.get("query"))
-    
-    # This now calls the logic where the AI DECIDES which tool to use
-    answer = g.llm_service.generate_agentic_answer(query)
+
+    # Prefer legacy agentic method when available; fallback to regular chat flow.
+    if hasattr(g.llm_service, "generate_agentic_answer"):
+        answer = g.llm_service.generate_agentic_answer(query)
+    else:
+        history = data.get("messages") or []
+        answer, _, _ = g.agent.chat(message=query, history=history)
     
     return jsonify({
         "query": query,
@@ -146,7 +198,13 @@ def get_direct_product(upc):
     try:
         # This uses the 'enriched' method we built in CosmosService
         # It handles: 1. Metadata 2. Inventory 3. Promotion Logic
-        product_info = g.database_service.get_enriched_product_info(str(upc))
+        lookup_id = _normalize_product_lookup_id(upc)
+        product_info = g.database_service.get_enriched_product_info(lookup_id)
+        if not product_info:
+            return jsonify({
+                "status": "error",
+                "message": "Product not found",
+            }), 404
         
         return jsonify({
             "status": "success",
@@ -179,7 +237,20 @@ def generate_qr(shelf_id):
 def get_all_products():
     """Returns all products from the products Cosmos DB container."""
     try:
-        products = g.database_service.get_all_products()
+        payload = g.database_service.get_all_products()
+
+        # DB services return either:
+        # - {'status', 'results', ...} (Cosmos/Mongo wrappers), or
+        # - a plain list of products.
+        if isinstance(payload, dict):
+            products = payload.get("results")
+            if not isinstance(products, list):
+                products = payload.get("data") if isinstance(payload.get("data"), list) else []
+        elif isinstance(payload, list):
+            products = payload
+        else:
+            products = []
+
         return jsonify({
             "status": "success",
             "count": len(products),
@@ -192,16 +263,33 @@ def get_all_products():
             "error": str(e)
         }), 500
 
-@app.route("/api/product/name/<porodcut_name>", methods=["GET"])
-def get_product(porodcut_name):
+@app.route("/api/product/name/<product_name>", methods=["GET"])
+def get_product(product_name):
     """
     FAST PATH: Called when a user selects a product on the Digital Twin.
     Returns metadata + current stock + calculated final price instantly.
     """
     try:
-        # This uses the 'enriched' method we built in CosmosService
-        # It handles: 1. Metadata 2. Inventory 3. Promotion Logic
-        product_info = g.database_service.get_product_by_name(str(porodcut_name))
+        raw_value = str(product_name)
+        product_info = None
+
+        # If frontend passes SKU_... or UPC-like values, resolve as direct lookup.
+        if _looks_like_product_identifier(raw_value):
+            lookup_id = _normalize_product_lookup_id(raw_value)
+            product_info = g.database_service.get_enriched_product_info(lookup_id)
+
+        # Otherwise resolve by human-readable product name.
+        if not product_info:
+            if hasattr(g.database_service, "get_enriched_product_info_by_name"):
+                product_info = g.database_service.get_enriched_product_info_by_name(raw_value)
+            else:
+                product_info = g.database_service.get_product_by_name(raw_value)
+
+        if not product_info:
+            return jsonify({
+                "status": "error",
+                "message": "Product not found",
+            }), 404
         
         return jsonify({
             "status": "success",

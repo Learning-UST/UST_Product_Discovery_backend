@@ -3,7 +3,6 @@ Shopping Agent (Sequential Execution - Production Ready)
 """
 
 import json
-from agent.tool_registry import ai_search_tool, cosmos_query_tool
 from utils.logger import get_logger
 from core.prompts import REWRITE_SYSTEM_PROMPT,FINAL_ANSWER_SYSTEM_PROMPT
 from core.utils import extract_product_names, normalize_result_payload
@@ -87,7 +86,7 @@ class ShopilotAgent:
             logger.info(f"AI Search Result: {json.dumps(ai_result)}")
 
             # ✅ STEP 3: Cosmos Query
-            cosmos_result = self.tools.database(rewritten_query, json.dumps(ai_result))
+            cosmos_result = self.tools.cosmos_query(rewritten_query, json.dumps(ai_result))
             cosmos_result = normalize_result_payload(cosmos_result)
             logger.info(f"[STEP 4] Cosmos Query Done")
             logger.info(f"Cosmos DB Result: {json.dumps(cosmos_result)}")

@@ -1,11 +1,8 @@
 import json
 from utils.logger import get_logger
 from core.vectordbs.ai_search import AISearch
-from core.vectordbs.opensearch import OpenSearchVectorDB
 from core.databases.cosmos import CosmosService
 from core.llms.azure_openai import AzureOpenAIService
-from core.llms.bedrock import BedrockLLMService
-from core.databases.mongodb import MongoDBService
 
 
 logger = get_logger()
@@ -36,6 +33,10 @@ class ProductSearchTools:
         }
     
     def _initialize_aws_services(self):
+            from core.vectordbs.opensearch import OpenSearchVectorDB
+            from core.llms.bedrock import BedrockLLMService
+            from core.databases.mongodb import MongoDBService
+
             # Initialize services (can be extended to use Resolver or Dependency Injection)
             return {
                 "llm": BedrockLLMService(),
@@ -68,7 +69,7 @@ class ProductSearchTools:
                 "parameters": query_response.get("parameters", [])
             }
 
-            db_result = self.cosmos.query_executor(query_data, table)
+            db_result = self.database.query_executor(query_data, table)
             logger.info(f"Cosmos query result: {json.dumps(db_result)}")
             return {
                 "status": "success",

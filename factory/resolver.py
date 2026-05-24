@@ -1,29 +1,22 @@
-# ✅ LLMs
-from core.llms.azure_openai import AzureOpenAIService
-from core.llms.bedrock import BedrockLLMService
-
-# ✅ Vector DBs
-from core.vectordbs.ai_search import AISearch
-from core.vectordbs.opensearch import OpenSearchVectorDB
-
-# ✅ NoSQL DBs
-from core.databases.cosmos import CosmosService
-from core.databases.mongodb import MongoDBService
-
-
 class Resolver:
     SERVICES = {
         "azure": {
-            "llm": AzureOpenAIService,
-            "vectordb": AISearch,
-            "database": CosmosService
+            "llm": "core.llms.azure_openai:AzureOpenAIService",
+            "vectordb": "core.vectordbs.ai_search:AISearch",
+            "database": "core.databases.cosmos:CosmosService"
         },
         "aws": {
-            "llm": BedrockLLMService,
-            "vectordb": OpenSearchVectorDB,
-            "database": MongoDBService
+            "llm": "core.llms.bedrock:BedrockLLMService",
+            "vectordb": "core.vectordbs.opensearch:OpenSearchVectorDB",
+            "database": "core.databases.mongodb:MongoDBService"
         }
     }
+
+    @staticmethod
+    def _load_class(import_path: str):
+        module_path, class_name = import_path.split(":", 1)
+        module = __import__(module_path, fromlist=[class_name])
+        return getattr(module, class_name)
 
     @staticmethod
     def resolve(cloud_provider: str):
@@ -34,5 +27,5 @@ class Resolver:
 
         # Instantiate all services
         return {
-            key: service() for key, service in services.items()
+            key: Resolver._load_class(service_path)() for key, service_path in services.items()
         }
