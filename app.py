@@ -6,6 +6,11 @@ import re
 from utils.logger import get_logger
 from agents.agent import ShopilotAgent
 from factory.resolver import Resolver
+from core.cloud_runtime import (
+    get_active_cloud_provider,
+    normalize_cloud_provider,
+    set_active_cloud_provider,
+)
 import qrcode
 import io
 import requests as http_requests
@@ -21,14 +26,15 @@ if isinstance(cors_origins, str) and "," in cors_origins:
     cors_origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
 CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
-_active_cloud_provider = str(get_config_value("CLOUD_PROVIDER", "azure")).strip().lower()
+_active_cloud_provider = normalize_cloud_provider(get_config_value("CLOUD_PROVIDER", "azure"))
 _active_services = None
 
 
 def _configure_services(cloud_provider):
     global _active_services, _active_cloud_provider
-    provider = str(cloud_provider or "azure").strip().lower()
+    provider = normalize_cloud_provider(cloud_provider)
     services = Resolver.resolve(provider)
+    set_active_cloud_provider(provider)
     _active_services = {
         "llm_service": services["llm"],
         "vectordb_service": services["vectordb"],
@@ -74,8 +80,8 @@ def health():
 
 @app.route("/api/set-agent", methods=["POST"])
 def set_agent():
-    data = request.json
-    cloud_provider = data.get("cloud_provider", "azure")
+    data = request.json or {}
+    cloud_provider = data.get("cloud_provider", get_active_cloud_provider())
 
     try:
         # Resolve services
@@ -147,6 +153,29 @@ def stt():
 
 @app.route("/api/get-speech-token", methods=["GET"])
 def get_speech_token():
+    provider = get_active_cloud_provider()
+
+    if provider == "aws":
+        import boto3
+
+        region = get_config_value("AWS_REGION") or get_config_value("AWS_TRANSCRIBE_REGION")
+        if not region:
+            return jsonify({"error": "Missing AWS region configuration"}), 500
+
+        duration = int(get_config_value("AWS_STS_DURATION_SECONDS", 3600))
+        sts_client = boto3.client("sts", region_name=region)
+        session = sts_client.get_session_token(DurationSeconds=duration)
+        creds = session.get("Credentials", {})
+
+        return jsonify({
+            "cloud_provider": "aws",
+            "region": region,
+            "access_key_id": creds.get("AccessKeyId"),
+            "secret_access_key": creds.get("SecretAccessKey"),
+            "session_token": creds.get("SessionToken"),
+            "expiration": creds.get("Expiration").isoformat() if creds.get("Expiration") else None,
+        })
+
     key = get_config_value("AZURE_SPEECH_KEY")
     region = get_config_value("AZURE_SPEECH_REGION")
     token_url = f"https://{region}.api.cognitive.microsoft.com/sts/v1.0/issueToken"
@@ -154,6 +183,7 @@ def get_speech_token():
     if resp.status_code != 200:
         return jsonify({"error": "Failed to fetch speech token"}), 502
     return jsonify({
+        "cloud_provider": "azure",
         "token": resp.text,
         "region": region
     })

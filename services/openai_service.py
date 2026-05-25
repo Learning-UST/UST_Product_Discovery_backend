@@ -80,6 +80,18 @@ class OpenAIService:
 
         logger.info("OpenAI initialized...")
 
+    def generate(self, system_prompt: str, user_prompt: str) -> str:
+        """Unified LLM interface used by provider-agnostic wrappers."""
+        response = self.client.chat.completions.create(
+            model=self.deployment,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.2
+        )
+        return response.choices[0].message.content
+
     # def get_master_prompt(self):
     #     return """
     #     You are the 'SmartRetail Assistant', a highly capable AI agent for a modern retail store.

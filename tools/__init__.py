@@ -1,23 +1,24 @@
-from services.cosmos_service import CosmosService
-from services.search_service import AiSearch
+from core.cloud_runtime import get_active_cloud_provider
+from factory.resolver import Resolver
 
-cosmos = CosmosService()
-ai_search = AiSearch()
+
+def _services():
+	return Resolver.resolve(get_active_cloud_provider())
 
 
 def get_product_details_tool(upc):
 	"""Fetch real-time price, stock, and info for a specific UPC."""
-	return cosmos.get_enriched_product_info(upc)
+	return _services()["database"].get_enriched_product_info(upc)
 
 
 def get_shelf_layout_tool(shelf_id):
 	"""Fetch planogram layout for a specific shelf."""
-	return cosmos.get_shelf_layout(shelf_id)
+	return _services()["database"].get_shelf_layout(shelf_id)
 
 
 def search_products_tool(query):
 	"""Search products for recommendations."""
-	return ai_search.search_text(query, top_k=3)
+	return _services()["vectordb"].search_text(query, top_k=3)
 
 
 __all__ = [

@@ -1,7 +1,6 @@
 import json
-from services.cosmos_service import CosmosService
-from services.openai_service import OpenAIService
-from services.search_service import AiSearch
+from core.cloud_runtime import get_active_cloud_provider
+from factory.resolver import Resolver
 from utils.logger import get_logger
 
 logger = get_logger()
@@ -9,10 +8,12 @@ logger = get_logger()
 
 class ProductSearchTools:
 
-    def __init__(self):
-        self.cosmos = CosmosService()
-        self.openai = OpenAIService()
-        self.ai_search = AiSearch()
+    def __init__(self, cloud_provider=None):
+        self.cloud_provider = cloud_provider or get_active_cloud_provider()
+        services = Resolver.resolve(self.cloud_provider)
+        self.database = services["database"]
+        self.llm = services["llm"]
+        self.search = services["vectordb"]
 
     # ✅ Tool 1: Cosmos (Structured Search)
     def cosmos_query(self, query: str, content: str) -> dict:
@@ -22,7 +23,7 @@ class ProductSearchTools:
 
         try:
             logger.info(f"Received Cosmos query: {query}")
-            query_response = self.openai.query_builder(query,content)
+            query_response = self.llm.query_builder(query, content)
             logger.info(f"Query builder response: {json.dumps(query_response)}")
 
             if query_response["status"] != "success":
@@ -34,16 +35,11 @@ class ProductSearchTools:
 
             table = query_response["table"]
 
-            query_data = {
-                "query": query_response["query"],
-                "parameters": query_response.get("parameters", [])
-            }
-
-            db_result = self.cosmos.query_executor(query_data, table)
+            db_result = self.database.query_executor(query_response, table)
             logger.info(f"Cosmos query result: {json.dumps(db_result)}")
             return {
                 "status": "success",
-                "source": "cosmos",
+                "source": "database",
                 "table": table,
                 "count": db_result.get("count", 0),
                 "results": db_result.get("results", [])
@@ -53,7 +49,7 @@ class ProductSearchTools:
             logger.exception("Cosmos query failed")
             return {
                 "status": "error",
-                "source": "cosmos",
+                "source": "database",
                 "message": str(e)
             }
 
@@ -65,7 +61,7 @@ class ProductSearchTools:
 
         try:
             logger.info(f"Received AI Search query: {query}")
-            docs = self.ai_search.search_text(query, top_k=5)
+            docs = self.search.search_text(query, top_k=5)
 
             return {
                 "status": "success",
@@ -78,6 +74,6 @@ class ProductSearchTools:
             logger.exception("AI Search failed")
             return {
                 "status": "error",
-                "source": "ai_search",
+                "source": "search",
                 "message": str(e)
             }

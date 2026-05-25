@@ -1,5 +1,5 @@
-from services.cosmos_service import CosmosService
-from services.openai_service import OpenAIService
+from core.cloud_runtime import get_active_cloud_provider
+from factory.resolver import Resolver
 from utils.logger import get_logger
 
 logger = get_logger()
@@ -14,11 +14,12 @@ def search_products(message: str) -> dict:
     """
 
     try:
-        openai_service = OpenAIService()
-        cosmos_service = CosmosService()
+        services = Resolver.resolve(get_active_cloud_provider())
+        llm_service = services["llm"]
+        database_service = services["database"]
 
         # ✅ Step 1: Build Query
-        query_response = openai_service.query_builder(message)
+        query_response = llm_service.query_builder(message)
 
         if query_response["status"] != "success":
             logger.error("Query builder failed", extra={"response": query_response})
@@ -29,13 +30,8 @@ def search_products(message: str) -> dict:
 
         table = query_response["table"]
 
-        query_data = {
-            "query": query_response["query"],
-            "parameters": query_response.get("parameters", [])
-        }
-
         # ✅ Step 2: Execute Query
-        db_result = cosmos_service.query_executor(query_data, table)
+        db_result = database_service.query_executor(query_response, table)
 
         if db_result["status"] != "success":
             logger.error("Query execution failed", extra={"response": db_result})

@@ -1,6 +1,10 @@
 from services.openai_service import OpenAIService
 from services.search_service import AiSearch
 from services.cosmos_service import CosmosService
+from services.bedrock_service import BedrockLLMService
+from services.opensearch_service import OpenSearchService
+from services.mongo_service import MongoService
+from core.cloud_runtime import normalize_cloud_provider
 
 
 class Resolver:
@@ -8,12 +12,14 @@ class Resolver:
 
     @staticmethod
     def resolve(cloud_provider: str = "azure") -> dict:
-        provider = str(cloud_provider or "azure").strip().lower()
+        provider = normalize_cloud_provider(cloud_provider)
 
-        if provider != "azure":
-            raise ValueError(
-                f"Unsupported cloud provider: {provider}. Supported providers: azure"
-            )
+        if provider == "aws":
+            return {
+                "llm": BedrockLLMService(),
+                "vectordb": OpenSearchService(),
+                "database": MongoService(),
+            }
 
         return {
             "llm": OpenAIService(),

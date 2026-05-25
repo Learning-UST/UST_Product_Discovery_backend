@@ -2,15 +2,15 @@
 Tool wrapper for AutoGen (must be plain function)
 """
 
-from services.search_service import AiSearch
+from core.cloud_runtime import get_active_cloud_provider
+from factory.resolver import Resolver
 import json
-
-retriever = AiSearch()
 
 def search_products(query: str) -> str:
     """
-    Search products using Azure AI Search and return formatted context.
+    Search products and return formatted context.
     """
+    retriever = Resolver.resolve(get_active_cloud_provider())["vectordb"]
     docs = retriever.search_text(query, top_k=5)
     # print(f"Search query: {query}")
     # print(f"Search results: {docs}")
