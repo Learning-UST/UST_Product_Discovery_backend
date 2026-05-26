@@ -16,7 +16,7 @@ import io
 import requests as http_requests
 from flask import send_file
 from flask import g
-
+from agents.food_agent import FoodAgent
 
 logger=get_logger()
 app = Flask(__name__)
@@ -28,6 +28,7 @@ CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
 _active_cloud_provider = normalize_cloud_provider(get_config_value("CLOUD_PROVIDER", "azure"))
 _active_services = None
+food_agent = FoodAgent()
 
 
 def _configure_services(cloud_provider):
@@ -333,6 +334,32 @@ def get_shelf_qr(shelf_id):
 
     except Exception as e:
         return jsonify({"error": "Shelf not found", "details": str(e)}), 404
+
+@app.route("/api/chat-food", methods=["POST"])
+def chat_food():
+    data = request.json
+    query = data.get("query")
+    history = data.get("messages")
+    # Use food agent with agentic flow, but only food index (no Cosmos)
+    answer, docs, mentioned_records = food_agent.chat_agentic(query=query, history=history)
+    recipe_ids = []
+    seen = set()
+    for item in mentioned_records or []:
+        if not isinstance(item, dict):
+            continue
+        raw_id = item.get("id") or item.get("recipe_number")
+        if raw_id is None:
+            continue
+        rid = str(raw_id)
+        if rid and rid not in seen:
+            seen.add(rid)
+            recipe_ids.append(rid)
+    return jsonify({
+        "query": query,
+        "answer": answer,
+        "sources": docs,
+        "recipe_ids": recipe_ids
+    })
 
 if __name__ == "__main__":
     app.run(
