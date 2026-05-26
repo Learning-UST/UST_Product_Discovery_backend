@@ -343,22 +343,26 @@ def chat_food():
     # Use food agent with agentic flow, but only food index (no Cosmos)
     answer, docs, mentioned_records = food_agent.chat_agentic(query=query, history=history)
     recipe_ids = []
+    recipe_colors = []
     seen = set()
     for item in mentioned_records or []:
         if not isinstance(item, dict):
             continue
         raw_id = item.get("id") or item.get("recipe_number")
+        color = item.get("color")
         if raw_id is None:
             continue
         rid = str(raw_id)
         if rid and rid not in seen:
             seen.add(rid)
             recipe_ids.append(rid)
+            recipe_colors.append(color)
     return jsonify({
         "query": query,
         "answer": answer,
         "sources": docs,
-        "recipe_ids": recipe_ids
+        "recipe_ids": recipe_ids,
+        "recipe_colors": recipe_colors
     })
 
 if __name__ == "__main__":
