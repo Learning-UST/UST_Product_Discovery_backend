@@ -1,87 +1,230 @@
-from services.food_search_service import FoodSearchService
+from food_pipeline.cosmos_service import FoodCosmosService
+from food_pipeline.food_search_service import FoodSearchService
 from services.openai_service import OpenAIService
+from agents.query_rewriter import QueryRewriter
+from utils.logger import get_logger
+import json
+
+logger = get_logger("FoodAgent")
+
 
 FOOD_SYSTEM_PROMPT = """
 You are a highly accurate and helpful food and recipe assistant.
 
 Instructions:
 - Always answer in clear, concise bullet points (pointers).
-- For each answer, make the most important information (from the user's query perspective) **bold** using markdown.
-- Use only the provided context for facts—do not invent or assume information.
-- If the user asks about nutrition (protein, carbs, calories, etc.), use the exact values from the data and bold the key numbers.
-- If the user asks for recommendations, suggest recipes from the context and bold the recipe names.
-- If the user asks about portion size or weight, include the "Menu Portion Size" and "Menu Portion Weight(g)" fields from the context in your answer, and bold these values. Do not include these fields unless the query is about portion size or weight.
-- If the user refers to "it" or "that", resolve using the conversation history.
-- Focus on high-level accuracy and clarity. Avoid unnecessary details.
-- Be friendly and professional.
+- Bold key values (calories, protein, recipe names).
+- Use ONLY provided context.
+- Do NOT assume or hallucinate.
 """
 
-class FoodAgent:
-    def chat_agentic(self, query, history=None, top_k=5):
-        """
-        Agentic flow: rewrite query, search food index, generate answer, extract mentioned records.
-        Cosmos DB is NOT used. Only food index is used for context.
-        """
-        docs = self.retriever.search(query, top_k=top_k)
-        context = self._build_context(docs)
-        prompt = self._build_prompt(query, history, context)
-        raw_answer = self.llm.generate(FOOD_SYSTEM_PROMPT, prompt)
-        answer = self._format_answer(raw_answer)
-        mentioned_records = self._extract_mentioned_source_records(answer, docs)
-        return answer, docs, mentioned_records
 
-    def _extract_mentioned_source_records(self, answer, docs):
-        """
-        Extracts records from docs whose recipe_name or short_name is mentioned in the answer.
-        """
-        if not answer or not docs:
-            return []
-        mentioned = set()
-        # Find all recipe names mentioned in the answer (exact match, case-insensitive)
-        for d in docs:
-            for key in ("recipe_name", "short_name"):
-                val = d.get(key)
-                if val and val.lower() in answer.lower():
-                    mentioned.add(val)
-        # Return all docs whose recipe_name or short_name was mentioned
-        return [d for d in docs if d.get("recipe_name") in mentioned or d.get("short_name") in mentioned]
+QUERY_BUILDER_SYSTEM_PROMPT = """
+You are an expert Cosmos DB query builder.
+
+Your task:
+1. Understand the user request
+2. Generate a SAFE parameterized Cosmos SQL query
+3. You will also receive context from an AI search tool — use it to refine the query
+
+--------------------------------------------------
+
+Strict Rules:
+- Always use: SELECT * FROM c
+- Always use: TOP 20
+- NEVER inline values → always use parameters (@p1, @p2...)
+- Use CONTAINS(c.field, @p) for text search
+- Use direct comparisons for numeric fields
+- ALWAYS include partition_key when filtering on 'station'
+- Ensure queries are efficient and valid
+
+--------------------------------------------------
+
+Schema: recipe
+
+Fields:
+id, recipe_number, recipe_name, short_name, station,
+menu_portion_size, menu_portion_weight_g, gtin,
+sell_price, kcal_per_100g, color, kcal, fat_g,
+carbohydrates_g, total_sugars_g, protein_g
+
+--------------------------------------------------
+
+Field Intelligence:
+
+- recipe_name / short_name → text search fields
+- station → PARTITION KEY (must include partition_key if filtered)
+- sell_price → numeric filtering
+- kcal → calories (lower = healthier)
+- protein_g → protein (higher = better for fitness)
+- fat_g, carbohydrates_g → macro filters
+
+--------------------------------------------------
+
+IMPORTANT: COLOR FIELD (Health Classification)
+
+The 'color' field represents how healthy the food is:
+
+- GREEN  → Healthy ✅ (low calorie, balanced nutrition)
+- YELLOW → Moderate ⚖️ (okay in moderation)
+- ORANGE → Less healthy ⚠️ (higher fat/carbs)
+- RED    → Unhealthy ❌ (high fat, sugar, or calories)
+
+Use this intelligently in queries:
+
+Examples:
+- Healthy food → c.color = "GREEN"
+- Avoid unhealthy → c.color != "RED"
+- Balanced → c.color IN ("GREEN", "YELLOW")
+
+--------------------------------------------------
+
+Query Patterns:
+
+User intent → Query logic:
+
+- "healthy food"
+  → filter color = GREEN
+
+- "high protein"
+  → c.protein_g > @p1
+
+- "low calorie"
+  → c.kcal < @p1
+
+- "cheap"
+  → c.sell_price < @p1
+
+- "garlic bread"
+  → CONTAINS(c.recipe_name, @p1)
+
+--------------------------------------------------
+
+Output Format (STRICT JSON ONLY):
+
+{
+  "query": "SELECT TOP 20 * FROM c WHERE ...",
+  "parameters": [
+    {"name": "@p1", "value": "..."}
+  ],
+  "partition_key": "value_if_applicable"
+}
+
+--------------------------------------------------
+
+DO NOT:
+- Do not return explanations
+- Do not return anything other than JSON
+- Do not inline values directly in query
+"""
+
+
+
+class FoodAgent:
+
     def __init__(self):
         self.retriever = FoodSearchService()
         self.llm = OpenAIService()
+        self.query_rewriter = QueryRewriter()
+        self.cosmos_service = FoodCosmosService()
 
-    def chat(self, query, history=None, top_k=5):
-        docs = self.retriever.search(query, top_k=top_k)
-        context = self._build_context(docs)
-        prompt = self._build_prompt(query, history, context)
+    # ✅ QUERY BUILDER
+    def query_builder(self, message: str, content: str = "") -> dict:
+        try:
+            response = self.llm.generate(
+                system_prompt=QUERY_BUILDER_SYSTEM_PROMPT,
+                user_prompt=message + "\n\nContext:\n" + content
+            )
+
+            logger.info(f"Query Builder LLM Response : {response}")
+
+            try:
+                query_data = json.loads(response)
+            except Exception:
+                logger.error(f"Invalid JSON from LLM: {response}")
+                return {"status": "error"}
+
+            if not query_data.get("query"):
+                return {"status": "error"}
+
+            return {
+                "status": "success",
+                "query": query_data["query"],
+                "parameters": query_data.get("parameters", []),
+                "partition_key": query_data.get("partition_key")
+            }
+
+        except Exception as e:
+            logger.exception("Query builder failed")
+            return {"status": "error", "message": str(e)}
+
+    # ✅ MAIN AGENT FLOW
+    def chat_agentic(self, query, history=None, top_k=5):
+        logger.info(f"Received query: {query}")
+        # 1. Rewrite
+        rewritten_query = self.query_rewriter.rewrite(query, history)
+        logger.info(f"Rewritten query: {rewritten_query}")
+        # 2. Vector Search
+        docs = self.retriever.search(rewritten_query, top_k=top_k)
+        logger.info(f"Retrieved {len(docs)} documents from search")
+        logger.info(f"Search results: {docs}")
+        # 3. Build Cosmos Query
+        cosmos_query = self.query_builder(
+            rewritten_query,
+            content="\n".join([d['recipe_name'] for d in docs])
+        )
+
+        logger.info(f"Generated Cosmos Query: {cosmos_query}")
+
+        # 4. Execute Cosmos Query
+        if cosmos_query.get("status") == "success":
+            result = self.cosmos_service.query_executor(cosmos_query)
+        else:
+            result = {"results": []}
+
+        logger.info(f"Cosmos Query Result: {result}")
+
+        # 5. Build Context
+        context = self._build_context(docs, result.get("results", []))
+
+        # 6. Generate Answer
+        prompt = self._build_prompt(rewritten_query, history, context)
         raw_answer = self.llm.generate(FOOD_SYSTEM_PROMPT, prompt)
+
         answer = self._format_answer(raw_answer)
-        return answer, docs
 
-    def _format_answer(self, answer):
-        """
-        Formats the answer so that the main answer is bold and the rest is in bullet points.
-        Assumes the first line is the main answer, and the rest are points.
-        """
-        if not answer:
-            return answer
-        lines = [line.strip() for line in answer.strip().split("\n") if line.strip()]
-        if not lines:
-            return answer
-        main = lines[0]
-        points = lines[1:]
-        formatted = f"**{main}**"
-        if points:
-            formatted += "\n" + "\n".join([f"- {pt}" for pt in points])
-        return formatted
+        # 7. Extract referenced recipes
+        mentioned_records = self._extract_mentioned_source_records(answer, docs)
 
-    def _build_context(self, docs):
+        return answer, docs, mentioned_records
+
+    # ✅ CLEAN CONTEXT (DEDUPLICATED)
+    def _build_context(self, docs, query_results):
+        seen = set()
         lines = []
-        for d in docs:
-            lines.append(f"Recipe: {d['recipe_name']} | Protein: {d['protein_g']}g | Carbohydrates: {d['carbohydrates_g']}g | Fat: {d['fat_g']}g | Calories: {d['kcal']} | {d['nutrition_summary']}")
+
+        for item in docs + query_results:
+            item_id = item.get("id")
+            if item_id in seen:
+                continue
+            seen.add(item_id)
+
+            lines.append(
+                f"Recipe: {item.get('recipe_name')} | "
+                f"Protein: {item.get('protein_g')}g | "
+                f"Carbs: {item.get('carbohydrates_g')}g | "
+                f"Fat: {item.get('fat_g')}g | "
+                f"Calories: {item.get('kcal')}"
+            )
+
         return "\n".join(lines)
 
+    # ✅ PROMPT BUILDER
     def _build_prompt(self, query, history, context):
-        history_text = "\n".join([f"{m['role']}: {m['content']}" for m in (history or [])])
+        history_text = "\n".join(
+            [f"{m['role']}: {m['content']}" for m in (history or [])]
+        )
+
         return f"""
 Conversation History:
 {history_text}
@@ -94,3 +237,43 @@ User Question:
 
 Answer:
 """
+
+    # ✅ FORMAT RESPONSE
+    def _format_answer(self, raw_answer):
+        if not raw_answer:
+            return ""
+
+        # handle object vs string
+        text = raw_answer if isinstance(raw_answer, str) else raw_answer.choices[0].message.content
+
+        lines = [l.strip() for l in text.split("\n") if l.strip()]
+        if not lines:
+            return text
+
+        main = lines[0]
+        rest = lines[1:]
+
+        formatted = f"**{main}**"
+        if rest:
+            formatted += "\n" + "\n".join([f"- {r}" for r in rest])
+
+        return formatted
+
+    # ✅ FIND MENTIONED RECIPES
+    def _extract_mentioned_source_records(self, answer, docs):
+        if not answer or not docs:
+            return []
+
+        mentioned = set()
+
+        for d in docs:
+            for key in ("recipe_name", "short_name"):
+                val = d.get(key)
+                if val and val.lower() in answer.lower():
+                    mentioned.add(val)
+
+        return [
+            d for d in docs
+            if d.get("recipe_name") in mentioned
+            or d.get("short_name") in mentioned
+        ]
