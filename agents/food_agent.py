@@ -8,14 +8,43 @@ import json
 logger = get_logger("FoodAgent")
 
 
-FOOD_SYSTEM_PROMPT = """
+FOOD_SYSTEM_PROMPT  = """
 You are a highly accurate and helpful food and recipe assistant.
+Response Style:
+- Always respond in clear, concise bullet points.
+- Start with a bold key statement (main takeaway).
+- Keep answers short, structured, and easy to read.
+- Do not include unnecessary explanations.
 
-Instructions:
-- Always answer in clear, concise bullet points (pointers).
-- Bold key values (calories, protein, recipe names).
-- Use ONLY provided context.
-- Do NOT assume or hallucinate.
+Data Usage Rules:
+- Use ONLY the provided context.
+- Do NOT assume, guess, or hallucinate information.
+- If data is missing, do not fabricate values.
+
+Highlighting Rules:
+- Always bold:
+  - Recipe names
+  - Calories (kcal)
+  - Protein values
+  - Any key value relevant to the user's query
+
+Health Classification :
+Use the "color" field to guide responses:
+
+- GREEN  → Healthy (best choice)
+- YELLOW → Moderate (okay occasionally)
+- ORANGE → Less healthy (limit intake)
+- RED    → Unhealthy (avoid if possible)
+
+When recommending food:
+- Prefer GREEN first
+- Then YELLOW
+- Avoid RED unless specifically asked
+
+Recommendations:
+- Suggest only items present in the context
+- Bold the recipe names
+- Explain briefly why they match (e.g., high protein, low calorie)
 """
 
 
@@ -186,7 +215,7 @@ class FoodAgent:
 
         # 5. Build Context
         context = self._build_context(docs, result.get("results", []))
-
+        logger.info(f"Built context for LLM:\n{context}")
         # 6. Generate Answer
         prompt = self._build_prompt(rewritten_query, history, context)
         raw_answer = self.llm.generate(FOOD_SYSTEM_PROMPT, prompt)
@@ -205,16 +234,32 @@ class FoodAgent:
 
         for item in docs + query_results:
             item_id = item.get("id")
-            if item_id in seen:
+
+            # ✅ Deduplicate
+            if not item_id or item_id in seen:
                 continue
             seen.add(item_id)
 
+            # ✅ Safe extraction with defaults
+            recipe_name = item.get("recipe_name", "Unknown")
+            protein = item.get("protein_g", "N/A")
+            carbs = item.get("carbohydrates_g", "N/A")
+            fat = item.get("fat_g", "N/A")
+            kcal = item.get("kcal", "N/A")
+            color = item.get("color", "N/A")
+            price = item.get("sell_price", "N/A")
+            station = item.get("station", "N/A")
+
+            # ✅ Rich structured context (LLM-friendly)
             lines.append(
-                f"Recipe: {item.get('recipe_name')} | "
-                f"Protein: {item.get('protein_g')}g | "
-                f"Carbs: {item.get('carbohydrates_g')}g | "
-                f"Fat: {item.get('fat_g')}g | "
-                f"Calories: {item.get('kcal')}"
+                f"Recipe: {recipe_name} | "
+                f"Station: {station} | "
+                f"Price: {price} | "
+                f"Calories: {kcal} | "
+                f"Protein: {protein}g | "
+                f"Carbs: {carbs}g | "
+                f"Fat: {fat}g | "
+                f"Health: {color}"
             )
 
         return "\n".join(lines)
