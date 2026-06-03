@@ -4,17 +4,67 @@ from services.openai_service import OpenAIService
 from agents.query_rewriter import QueryRewriter
 from utils.logger import get_logger
 import json
+import re
 
 logger = get_logger("FoodAgent")
 
-
-FOOD_SYSTEM_PROMPT  = """
+FOOD_SYSTEM_PROMPT = """
 You are a highly accurate and helpful food and recipe assistant.
+
 Response Style:
-- Always respond in clear, concise bullet points.
-- Start with a bold key statement (main takeaway).
+- Keep responses clear, concise, and easy to scan.
 - Keep answers short, structured, and easy to read.
 - Do not include unnecessary explanations.
+- First line must always be a bold, context-aware takeaway sentence.
+- Do not use a heading label like "Main takeaway:".
+- Do not prefix the first takeaway line with any bullet.
+
+Mandatory First Line Rule (NON-NEGOTIABLE):
+- The very first output line must be a takeaway sentence.
+- This line must appear before any product name, bullet, or recommendation.
+- Never start the response with a recipe name.
+- If uncertain, use this exact fallback first line:
+    **Best matches are listed below based on your request and available context.**
+- After writing the full answer, self-check and ensure line 1 is still a takeaway sentence.
+
+Context-Aware Output Rule:
+- If the user asks for recommendations, options, comparisons, ranking, or best picks,
+    use itemized food format for each item.
+- If the user asks a general nutrition/explanation question, do not force recipe-name lines;
+        provide concise insights after the takeaway.
+
+Required Output Format:
+- Use this format only when itemized food output is required:
+    - **<Recipe Name>** [<COLOR>]
+- For details under each recipe, use a second bullet style with '•'.
+- Detail lines must be indented under the recipe line.
+- Example detail lines:
+    • **220 kcal**
+    • **18g protein**
+    • Low carbs and moderate fats
+- Put the health color beside the recipe name in brackets.
+- Allowed color values: [GREEN], [YELLOW], [ORANGE], [RED]
+- After each recipe line, add 1 to 3 short detail points using '•'.
+- Do not add numbering.
+- Do not omit the color tag if the color is available in context.
+- Recipe name must always be bold.
+- Do not force bullets on every line.
+- Recommendation summary lines (for example combo suggestions) should be plain lines without bullets unless explicitly requested.
+
+Example format:
+- **Best matches for your request are listed below based on available context.**
+
+- **Grilled Chicken Salad** [GREEN]
+    • **220 kcal**
+    • **18g protein**
+    • Good option for a low-calorie, high-protein meal
+
+- **Garlic Bread** [ORANGE]
+    • **310 kcal**
+    • **6g protein**
+    • Higher in carbs and fat, so less healthy than GREEN items
+
+Recommended combo: Pair **Grilled Chicken Salad** with **HC Seasoned Peas and Pearl Onions, SR** for higher protein and controlled carbs/fats.
 
 Data Usage Rules:
 - Use ONLY the provided context.
@@ -22,19 +72,16 @@ Data Usage Rules:
 - If data is missing, do not fabricate values.
 
 Highlighting Rules:
-- Always bold:
-  - Recipe names
-  - Calories (kcal)
-  - Protein values
-  - Any key value relevant to the user's query
+- Always bold recipe names
+- Always bold calories
+- Always bold protein values
+- Always bold any key value relevant to the user's query
 
-Health Classification :
-Use the "color" field to guide responses:
-
-- GREEN  → Healthy (best choice)
-- YELLOW → Moderate (okay occasionally)
-- ORANGE → Less healthy (limit intake)
-- RED    → Unhealthy (avoid if possible)
+Health Classification:
+- GREEN -> Healthy
+- YELLOW -> Moderate
+- ORANGE -> Less healthy
+- RED -> Unhealthy
 
 When recommending food:
 - Prefer GREEN first
@@ -43,8 +90,7 @@ When recommending food:
 
 Recommendations:
 - Suggest only items present in the context
-- Bold the recipe names
-- Explain briefly why they match (e.g., high protein, low calorie)
+- Explain briefly why they match
 """
 
 
@@ -220,7 +266,8 @@ class FoodAgent:
         prompt = self._build_prompt(rewritten_query, history, context)
         raw_answer = self.llm.generate(FOOD_SYSTEM_PROMPT, prompt)
 
-        answer = self._format_answer(raw_answer)
+        # answer = self._format_answer(raw_answer, rewritten_query)
+        answer=raw_answer
 
         # 7. Extract referenced recipes
         mentioned_records = self._extract_mentioned_source_records(answer, docs)
@@ -284,25 +331,60 @@ Answer:
 """
 
     # ✅ FORMAT RESPONSE
-    def _format_answer(self, raw_answer):
-        if not raw_answer:
-            return ""
+    # def _format_answer(self, raw_answer, query=None):
+    #     if not raw_answer:
+    #         return ""
 
-        # handle object vs string
-        text = raw_answer if isinstance(raw_answer, str) else raw_answer.choices[0].message.content
+    #     text = raw_answer if isinstance(raw_answer, str) else raw_answer.choices[0].message.content
+    #     lines = [l.strip() for l in str(text).split("\n") if l.strip()]
+    #     if not lines:
+    #         return str(text)
 
-        lines = [l.strip() for l in text.split("\n") if l.strip()]
-        if not lines:
-            return text
+    #     normalized = []
+    #     for line in lines:
+    #         s = line.replace("•", "-")
+    #         s = re.sub(r"^\s*[-*]\s*", "- ", s)
+    #         normalized.append(s.strip())
 
-        main = lines[0]
-        rest = lines[1:]
+    #     first = normalized[0].lstrip("- ").strip()
+    #     first = re.sub(r"^\*+|\*+$", "", first).strip()
+    #     first = re.sub(r"^main\s*takeaway\s*:\s*", "", first, flags=re.IGNORECASE).strip()
 
-        formatted = f"**{main}**"
-        if rest:
-            formatted += "\n" + "\n".join([f"- {r}" for r in rest])
+    #     if query:
+    #         heading = f"Here are the best matches for '{query}' based on available context."
+    #     else:
+    #         heading = first or "Here are the most relevant options based on available context."
 
-        return formatted
+    #     normalized[0] = f"**{heading}**"
+
+    #     recipe_pattern = re.compile(
+    #         r"^\-\s*\*{0,2}\s*(.+?)\s*\*{0,2}\s*\[(GREEN|YELLOW|ORANGE|RED)\]\s*$",
+    #         re.IGNORECASE,
+    #     )
+
+    #     for i in range(1, len(normalized)):
+    #         line = normalized[i]
+    #         m = recipe_pattern.match(line)
+    #         if m:
+    #             name = m.group(1).strip(" *")
+    #             color = m.group(2).upper()
+    #             normalized[i] = f"- **{name}** [{color}]"
+    #             continue
+
+    #         if line.startswith("-"):
+    #             content = line[1:].strip()
+    #         else:
+    #             content = line
+
+    #         content = re.sub(r"^\*+|\*+$", "", content).strip()
+
+    #         metric_line = re.match(r"^\d+(?:\.\d+)?\s*(g|kcal)\b", content, re.IGNORECASE)
+    #         if content and not content.startswith("**") and metric_line:
+    #             content = f"**{content}**"
+
+    #         normalized[i] = f"- {content}"
+
+    #     return "\n".join(normalized)
 
     # ✅ FIND MENTIONED RECIPES
     def _extract_mentioned_source_records(self, answer, docs):
