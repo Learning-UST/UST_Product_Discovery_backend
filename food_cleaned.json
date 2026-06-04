@@ -60,7 +60,7 @@
     "embedding_text": "Recipe HC Sauteed Swiss Chard. Short name Swiss Chard. Station Main Dish- Sides. Portion 1 cup with weight 273.011 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 23.71039995, Kcal: 64.732, Fat (g): 2.621, Carbohydrates (g): 9.664, Sugars (g): 3.319, Protein (g): 2.831."
   },
   {
-    "id": "food_8122.2_886721091431",
+    "id": "food_8122_2_886721091431",
     "recipe_number": "8122.2",
     "recipe_name": "EUR: Roasted Zucchini",
     "short_name": "roasted zucchini",
@@ -80,7 +80,7 @@
     "embedding_text": "Recipe EUR: Roasted Zucchini. Short name roasted zucchini. Station Main Dish- Sides. Portion 1 cup with weight 175.289 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 31.38245982, Kcal: 55.01, Fat (g): 3.458, Carbohydrates (g): 5.364, Sugars (g): 4.309, Protein (g): 2.086."
   },
   {
-    "id": "food_1829.3_886721463672",
+    "id": "food_1829_3_886721463672",
     "recipe_number": "1829.3",
     "recipe_name": "HC Seasoned Braised Cabbage",
     "short_name": "Braised Cabbage",
@@ -100,7 +100,7 @@
     "embedding_text": "Recipe HC Seasoned Braised Cabbage. Short name Braised Cabbage. Station Main Dish- Sides. Portion 1 cup with weight 332.044 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 34.94024888, Kcal: 116.017, Fat (g): 4.939, Carbohydrates (g): 17.386, Sugars (g): 8.979, Protein (g): 3.413."
   },
   {
-    "id": "food_9002.1_886721090830",
+    "id": "food_9002_1_886721090830",
     "recipe_number": "9002.1",
     "recipe_name": "EUR: Steamed Green Beans",
     "short_name": "steamed green beans",
@@ -140,7 +140,7 @@
     "embedding_text": "Recipe HC Seasoned Braised Cabbage. Short name Braised Cabbage. Station Main Dish- Sides. Portion 1 cup with weight 330.744 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 35.42135307, Kcal: 117.154, Fat (g): 4.953, Carbohydrates (g): 17.661, Sugars (g): 8.969, Protein (g): 3.466."
   },
   {
-    "id": "food_8122.12_194306015032",
+    "id": "food_8122_12_194306015032",
     "recipe_number": "8122.12",
     "recipe_name": "HC Roasted Yellow Squash",
     "short_name": "Roasted Yellow Squash",
@@ -160,7 +160,7 @@
     "embedding_text": "Recipe HC Roasted Yellow Squash. Short name Roasted Yellow Squash. Station Main Dish- Sides. Portion 1 cup with weight 187.146 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 39.47292488, Kcal: 73.872, Fat (g): 4.861, Carbohydrates (g): 7.258, Sugars (g): 5.228, Protein (g): 1.868."
   },
   {
-    "id": "food_1016.8_886721390985",
+    "id": "food_1016_8_886721390985",
     "recipe_number": "1016.8",
     "recipe_name": "Canteen BMW: Roasted Summer Squash with Onion & Basil",
     "short_name": "roasted summer squash medley",
@@ -200,7 +200,7 @@
     "embedding_text": "Recipe Earth Table: Ratatouille. Short name Ratatouille. Station Main Dish- Sides. Portion 1 cup with weight 389.223 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 43.17473531, Kcal: 168.046, Fat (g): 9.848, Carbohydrates (g): 19.589, Sugars (g): 11.379, Protein (g): 3.718."
   },
   {
-    "id": "food_25735.1_886721121411",
+    "id": "food_25735_1_886721121411",
     "recipe_number": "25735.1",
     "recipe_name": "Whole+Sum100: Sauteed Fresh Green Beans",
     "short_name": "Sauteed Fresh Green Beans",
@@ -220,7 +220,7 @@
     "embedding_text": "Recipe Whole+Sum100: Sauteed Fresh Green Beans. Short name Sauteed Fresh Green Beans. Station Main Dish- Sides. Portion 1 cup with weight 137.245 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 47.26948158, Kcal: 64.875, Fat (g): 1.879, Carbohydrates (g): 11.642, Sugars (g): 5.28, Protein (g): 2.646."
   },
   {
-    "id": "food_5856.3_886721391227",
+    "id": "food_5856_3_886721391227",
     "recipe_number": "5856.3",
     "recipe_name": "Canteen BMW: Vegetable Medley with Turnips",
     "short_name": "Fresh Vegetable Medley",
@@ -240,7 +240,7 @@
     "embedding_text": "Recipe Canteen BMW: Vegetable Medley with Turnips. Short name Fresh Vegetable Medley. Station Main Dish- Sides. Portion 1 cup with weight 232.931 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 47.61753481, Kcal: 110.916, Fat (g): 5.531, Carbohydrates (g): 13.848, Sugars (g): 6.502, Protein (g): 4.246."
   },
   {
-    "id": "food_22288.3_886721415435",
+    "id": "food_22288_3_886721415435",
     "recipe_number": "22288.3",
     "recipe_name": "Canteen BMW: Beef Barley Vegetable Soup",
     "short_name": "Beef Barley Soup",
@@ -300,7 +300,7 @@
     "embedding_text": "Recipe EUR: Garlic Grilled Summer Squash. Short name grilled summer squash. Station Main Dish- Sides. Portion 1 cup with weight 291.02 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 52.89224108, Kcal: 153.927, Fat (g): 12.294, Carbohydrates (g): 10.359, Sugars (g): 7.576, Protein (g): 3.122."
   },
   {
-    "id": "food_10520.5_886721365488",
+    "id": "food_10520_5_886721365488",
     "recipe_number": "10520.5",
     "recipe_name": "EUR: Sauteed Green Beans and Cherry Tomatoes",
     "short_name": "green beans & cherry tomatoes",
@@ -320,7 +320,7 @@
     "embedding_text": "Recipe EUR: Sauteed Green Beans and Cherry Tomatoes. Short name green beans & cherry tomatoes. Station Main Dish- Sides. Portion 8 oz portion with weight 226.796 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 53.16275419, Kcal: 120.571, Fat (g): 6.54, Carbohydrates (g): 15.101, Sugars (g): 6.814, Protein (g): 3.284."
   },
   {
-    "id": "food_35015.12_886721280248",
+    "id": "food_35015_12_886721280248",
     "recipe_number": "35015.12",
     "recipe_name": "Rooted Sub: Sauteed Kale",
     "short_name": "Sauteed Kale",
@@ -340,7 +340,7 @@
     "embedding_text": "Recipe Rooted Sub: Sauteed Kale. Short name Sauteed Kale. Station Main Dish- Sides. Portion 1/2 cup with weight 155.701 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 54.14737221, Kcal: 84.308, Fat (g): 5.665, Carbohydrates (g): 6.974, Sugars (g): 1.505, Protein (g): 4.469."
   },
   {
-    "id": "food_33992.8_886721159414",
+    "id": "food_33992_8_886721159414",
     "recipe_number": "33992.8",
     "recipe_name": "HC Fresh Roasted Carrots",
     "short_name": "Roasted Carrots",
@@ -360,7 +360,7 @@
     "embedding_text": "Recipe HC Fresh Roasted Carrots. Short name Roasted Carrots. Station Main Dish- Sides. Portion 1 cup with weight 261.252 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 54.24991962, Kcal: 141.729, Fat (g): 6.383, Carbohydrates (g): 20.764, Sugars (g): 11.995, Protein (g): 1.613."
   },
   {
-    "id": "food_75314.6_886721632139",
+    "id": "food_75314_6_886721632139",
     "recipe_number": "75314.6",
     "recipe_name": "EUR: Roasted Brussels Sprouts",
     "short_name": "roasted brussels sprouts",
@@ -400,7 +400,7 @@
     "embedding_text": "Recipe EUR: Southern Style Bacon Green Beans. Short name southern style green beans. Station Main Dish- Sides. Portion 8 ounce with weight 188.99 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 58.8517911, Kcal: 111.224, Fat (g): 5.52, Carbohydrates (g): 9.813, Sugars (g): 4.35, Protein (g): 7.141."
   },
   {
-    "id": "food_8289.2_886721091400",
+    "id": "food_8289_2_886721091400",
     "recipe_number": "8289.2",
     "recipe_name": "EUR: Roasted Vegetables",
     "short_name": "Roasted Vegetables",
@@ -420,7 +420,7 @@
     "embedding_text": "Recipe EUR: Roasted Vegetables. Short name Roasted Vegetables. Station Main Dish- Sides. Portion 1 cup with weight 217.632 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 62.8363476, Kcal: 136.752, Fat (g): 9.582, Carbohydrates (g): 12.52, Sugars (g): 6.986, Protein (g): 2.221."
   },
   {
-    "id": "food_9070.7_886721391371",
+    "id": "food_9070_7_886721391371",
     "recipe_number": "9070.7",
     "recipe_name": "Canteen BMW: Fresh Italian Blend Vegetables",
     "short_name": "Fresh Italian Vegetables",
@@ -460,7 +460,7 @@
     "embedding_text": "Recipe HC Sauteed Fresh Vegetable Medley. Short name Sauteed Vegetable Medley. Station Main Dish- Sides. Portion 1 cup with weight 134.93 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 65.08115319, Kcal: 87.814, Fat (g): 6.865, Carbohydrates (g): 6.474, Sugars (g): 3.927, Protein (g): 1.397."
   },
   {
-    "id": "food_18994.4_194306897836",
+    "id": "food_18994_4_194306897836",
     "recipe_number": "18994.4",
     "recipe_name": "EUR: Sweet Potato Hash with Peppers",
     "short_name": "sweet potato hash",
@@ -520,7 +520,7 @@
     "embedding_text": "Recipe HC Mexican Corn. Short name Mexican Corn. Station Main Dish- Sides. Portion 1 cup with weight 207.202 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 75.39068156, Kcal: 156.211, Fat (g): 1.374, Carbohydrates (g): 36.999, Sugars (g): 6.499, Protein (g): 4.97."
   },
   {
-    "id": "food_50725.1_886721343523",
+    "id": "food_50725_1_886721343523",
     "recipe_number": "50725.1",
     "recipe_name": "Carrots Honey Roasted",
     "short_name": "Honey Roasted Carrots",
@@ -580,7 +580,7 @@
     "embedding_text": "Recipe HC Hot German Potato Salad. Short name Hot German Potato Salad. Station Main Dish- Sides. Portion 1 cup with weight 241.323 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 89.39263974, Kcal: 215.725, Fat (g): 2.814, Carbohydrates (g): 41.524, Sugars (g): 6.341, Protein (g): 5.768."
   },
   {
-    "id": "food_63250.1_886721562696",
+    "id": "food_63250_1_886721562696",
     "recipe_number": "63250.1",
     "recipe_name": "EUR: Roasted Potato Wedges",
     "short_name": "potato wedges",
@@ -660,7 +660,7 @@
     "embedding_text": "Recipe EUR: Dijon Roasted Red Potatoes. Short name dijon roasted red potatoes. Station Main Dish- Sides. Portion 8 ounce with weight 226.796 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 99.0555389, Kcal: 224.654, Fat (g): 4.216, Carbohydrates (g): 42.183, Sugars (g): 3.483, Protein (g): 5.544."
   },
   {
-    "id": "food_5676.2_886721173229",
+    "id": "food_5676_2_886721173229",
     "recipe_number": "5676.2",
     "recipe_name": "HC Seasoned Peas and Pearl Onions, SR",
     "short_name": "Peas and Pearl Onions",
@@ -680,7 +680,7 @@
     "embedding_text": "Recipe HC Seasoned Peas and Pearl Onions, SR. Short name Peas and Pearl Onions. Station Main Dish- Sides. Portion 1 cup with weight 190.801 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 99.22379862, Kcal: 189.32, Fat (g): 7.781, Carbohydrates (g): 23.33, Sugars (g): 7.444, Protein (g): 7.84."
   },
   {
-    "id": "food_33992.79_886721384304",
+    "id": "food_33992_79_886721384304",
     "recipe_number": "33992.79",
     "recipe_name": "Canteen: Roasted Red Potatoes",
     "short_name": "Roasted Potatoes",
@@ -740,7 +740,7 @@
     "embedding_text": "Recipe HC Smashed Spiced Sweet Potatoes. Short name Smashed Sweet Potatoes. Station Main Dish- Sides. Portion 1 cup with weight 317.106 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 104.4644378, Kcal: 331.263, Fat (g): 4.654, Carbohydrates (g): 68.408, Sugars (g): 23.772, Protein (g): 6.468."
   },
   {
-    "id": "food_134479.3_886721414568",
+    "id": "food_134479_3_886721414568",
     "recipe_number": "134479.3",
     "recipe_name": "Canteen BMW: Enchilada Refried Beans",
     "short_name": "Enchilada Refried Beans",
@@ -800,7 +800,7 @@
     "embedding_text": "Recipe Canteen BMW: Baked Beans. Short name Baked Beans. Station Main Dish- Sides. Portion 1 cup with weight 230.254 grams. Sell price 1.98 dollars. Color tag GREEN. Kcal/100g: 119.8941169, Kcal: 276.061, Fat (g): 1.624, Carbohydrates (g): 55.992, Sugars (g): 27.589, Protein (g): 7.704."
   },
   {
-    "id": "food_2144.5_886721392538",
+    "id": "food_2144_5_886721392538",
     "recipe_number": "2144.5",
     "recipe_name": "Canteen BMW: Lemon Dill Rice",
     "short_name": "Lemon Dill Rice",
@@ -820,7 +820,7 @@
     "embedding_text": "Recipe Canteen BMW: Lemon Dill Rice. Short name Lemon Dill Rice. Station Main Dish- Sides. Portion 1 cup with weight 183.983 grams. Sell price 1.98 dollars. Color tag YELLOW. Kcal/100g: 126.8975938, Kcal: 233.47, Fat (g): 9.112, Carbohydrates (g): 34.469, Sugars (g): 1.084, Protein (g): 3.449."
   },
   {
-    "id": "food_5277.3_886721090823",
+    "id": "food_5277_3_886721090823",
     "recipe_number": "5277.3",
     "recipe_name": "EUR: Green Bean Almondine",
     "short_name": "green bean almondine",
@@ -920,7 +920,7 @@
     "embedding_text": "Recipe HC Southwestern Cornbread. Short name Southwestern Cornbread. Station Main Dish- Sides. Portion 1 slice with weight 111.045 grams. Sell price 1.98 dollars. Color tag ORANGE. Kcal/100g: 219.9153496, Kcal: 244.205, Fat (g): 10.22, Carbohydrates (g): 34.59, Sugars (g): 3.756, Protein (g): 4.067."
   },
   {
-    "id": "food_5264.14_886721415459",
+    "id": "food_5264_14_886721415459",
     "recipe_number": "5264.14",
     "recipe_name": "Canteen BMW: Sweet Pea Orzo",
     "short_name": "Sweet Pea Orzo",
@@ -980,7 +980,7 @@
     "embedding_text": "Recipe EUR: Garlic Cheese Bread. Short name garlic cheese bread. Station Main Dish- Sides. Portion 1 slice with weight 29.787 grams. Sell price 1.98 dollars. Color tag ORANGE. Kcal/100g: 375.0830899, Kcal: 111.726, Fat (g): 6.611, Carbohydrates (g): 8.952, Sugars (g): 0.169, Protein (g): 4.042."
   },
   {
-    "id": "food_7743.4_886721393993",
+    "id": "food_7743_4_886721393993",
     "recipe_number": "7743.4",
     "recipe_name": "Canteen BMW: Stuffed Pepper Soup",
     "short_name": "Stuffed Pepper Soup",
@@ -1000,7 +1000,7 @@
     "embedding_text": "Recipe Canteen BMW: Stuffed Pepper Soup. Short name Stuffed Pepper Soup. Station Soups. Portion 16 floz with weight 470.858 grams. Sell price 3.14 dollars. Color tag GREEN. Kcal/100g: 113.483683, Kcal: 534.347, Fat (g): 32.132, Carbohydrates (g): 30.781, Sugars (g): 5.262, Protein (g): 30.133."
   },
   {
-    "id": "food_27120.4_886721415596",
+    "id": "food_27120_4_886721415596",
     "recipe_number": "27120.4",
     "recipe_name": "Canteen BMW: Cabbage And Potato Soup with Bacon, from base",
     "short_name": "Cabbage and Potato Soup with Bacon",
@@ -1040,7 +1040,7 @@
     "embedding_text": "Recipe HC Minestrone Soup. Short name Minestrone Soup. Station Soups. Portion 16 floz with weight 575.186 grams. Sell price 3.14 dollars. Color tag GREEN. Kcal/100g: 41.66321851, Kcal: 239.641, Fat (g): 2.684, Carbohydrates (g): 43.514, Sugars (g): 5.097, Protein (g): 11.93."
   },
   {
-    "id": "food_77898.5_886721414520",
+    "id": "food_77898_5_886721414520",
     "recipe_number": "77898.5",
     "recipe_name": "Canteen BMW: Havana Style Black Bean Soup",
     "short_name": "Havana-Style Black Bean Soup",
@@ -1060,7 +1060,7 @@
     "embedding_text": "Recipe Canteen BMW: Havana Style Black Bean Soup. Short name Havana-Style Black Bean Soup. Station Soups. Portion 16 floz with weight 468.638 grams. Sell price 3.14 dollars. Color tag GREEN. Kcal/100g: 45.69497139, Kcal: 214.144, Fat (g): 6.507, Carbohydrates (g): 33.644, Sugars (g): 10.354, Protein (g): 7.838."
   },
   {
-    "id": "food_11077.2_886721216445",
+    "id": "food_11077_2_886721216445",
     "recipe_number": "11077.2",
     "recipe_name": "EUR: Chicken & White Bean Soup (Base)",
     "short_name": "chicken & white bean soup",
@@ -1120,7 +1120,7 @@
     "embedding_text": "Recipe HC Lentil and Black Bean Soup. Short name Lentil and Black Bean Soup. Station Soups. Portion 16 ounce with weight 709.189 grams. Sell price 3.14 dollars. Color tag GREEN. Kcal/100g: 53.77818889, Kcal: 381.389, Fat (g): 10.128, Carbohydrates (g): 57.992, Sugars (g): 9.696, Protein (g): 18.715."
   },
   {
-    "id": "food_5791.1_886721391173",
+    "id": "food_5791_1_886721391173",
     "recipe_number": "5791.1",
     "recipe_name": "Canteen BMW Tomato Bisque Soup",
     "short_name": "Tomato Bisque",
@@ -1140,7 +1140,7 @@
     "embedding_text": "Recipe Canteen BMW Tomato Bisque Soup. Short name Tomato Bisque. Station Soups. Portion 16 floz with weight 535.061 grams. Sell price 3.14 dollars. Color tag GREEN. Kcal/100g: 64.117923, Kcal: 343.07, Fat (g): 19.782, Carbohydrates (g): 37.605, Sugars (g): 17.869, Protein (g): 5.296."
   },
   {
-    "id": "food_57623.2_886721483854",
+    "id": "food_57623_2_886721483854",
     "recipe_number": "57623.2",
     "recipe_name": "EUR: Corn Chowder (Scratch-Base)",
     "short_name": "corn chowder",
@@ -1180,7 +1180,7 @@
     "embedding_text": "Recipe EUR: Chicken Tortilla Soup (Scratch-Base). Short name chicken tortilla soup. Station Soups. Portion 16 floz with weight 698.115 grams. Sell price 3.14 dollars. Color tag GREEN. Kcal/100g: 66.12750048, Kcal: 461.646, Fat (g): 12.976, Carbohydrates (g): 63.798, Sugars (g): 7.948, Protein (g): 26.016."
   },
   {
-    "id": "food_24775.4_886721415046",
+    "id": "food_24775_4_886721415046",
     "recipe_number": "24775.4",
     "recipe_name": "Canteen BMW: Pasta Fagioli with Sausage Soup",
     "short_name": "Pasta Fagioli with Sausage Soup",
@@ -1200,7 +1200,7 @@
     "embedding_text": "Recipe Canteen BMW: Pasta Fagioli with Sausage Soup. Short name Pasta Fagioli with Sausage Soup. Station Soups. Portion 16 oz portion with weight 495.886 grams. Sell price 3.14 dollars. Color tag GREEN. Kcal/100g: 71.93972002, Kcal: 356.739, Fat (g): 12.244, Carbohydrates (g): 45.467, Sugars (g): 4.96, Protein (g): 15.997."
   },
   {
-    "id": "food_71286.6_886721393962",
+    "id": "food_71286_6_886721393962",
     "recipe_number": "71286.6",
     "recipe_name": "Canteen BMW: Curry Spinach Lentil Soup",
     "short_name": "Curry Spinach Lentil Soup",
@@ -1220,7 +1220,7 @@
     "embedding_text": "Recipe Canteen BMW: Curry Spinach Lentil Soup. Short name Curry Spinach Lentil Soup. Station Soups. Portion 16 floz with weight 596.146 grams. Sell price 3.14 dollars. Color tag GREEN. Kcal/100g: 72.29772572, Kcal: 431.0, Fat (g): 10.541, Carbohydrates (g): 66.613, Sugars (g): 4.847, Protein (g): 22.274."
   },
   {
-    "id": "food_57630.2_886721415473",
+    "id": "food_57630_2_886721415473",
     "recipe_number": "57630.2",
     "recipe_name": "Canteen BMW: Cream of Chicken with Rice",
     "short_name": "cream of chicken and rice",
@@ -1240,7 +1240,7 @@
     "embedding_text": "Recipe Canteen BMW: Cream of Chicken with Rice. Short name cream of chicken and rice. Station Soups. Portion 16 floz with weight 534.627 grams. Sell price 3.14 dollars. Color tag GREEN. Kcal/100g: 119.9632641, Kcal: 641.356, Fat (g): 51.333, Carbohydrates (g): 31.687, Sugars (g): 5.723, Protein (g): 15.35."
   },
   {
-    "id": "food_48376.12_194306163887",
+    "id": "food_48376_12_194306163887",
     "recipe_number": "48376.12",
     "recipe_name": "HC Vegetable Pad Thai",
     "short_name": "Vegetable Pad Thai",
@@ -1260,7 +1260,7 @@
     "embedding_text": "Recipe HC Vegetable Pad Thai. Short name Vegetable Pad Thai. Station Asian-Entr\u00e9e. Portion 1 cup with weight 227.206 grams. Sell price 4.74 dollars. Color tag YELLOW. Kcal/100g: 147.067419, Kcal: 334.146, Fat (g): 11.505, Carbohydrates (g): 50.093, Sugars (g): 17.499, Protein (g): 9.169."
   },
   {
-    "id": "food_44905.5_886721415572",
+    "id": "food_44905_5_886721415572",
     "recipe_number": "44905.5",
     "recipe_name": "Canteen BMW: Cassoulet with Chicken and Sausage",
     "short_name": "Cassoulet",
@@ -1280,7 +1280,7 @@
     "embedding_text": "Recipe Canteen BMW: Cassoulet with Chicken and Sausage. Short name Cassoulet. Station Main Dish- Entr\u00e9e. Portion 12 ounce with weight 349.8 grams. Sell price 5.82 dollars. Color tag GREEN. Kcal/100g: 115.198685, Kcal: 402.965, Fat (g): 24.702, Carbohydrates (g): 15.827, Sugars (g): 6.01, Protein (g): 28.417."
   },
   {
-    "id": "food_5019.23_886721414506",
+    "id": "food_5019_23_886721414506",
     "recipe_number": "5019.23",
     "recipe_name": "Canteen BMW: Chicken Piccata",
     "short_name": "chicken piccata",
@@ -1300,7 +1300,7 @@
     "embedding_text": "Recipe Canteen BMW: Chicken Piccata. Short name chicken piccata. Station Main Dish- Entr\u00e9e. Portion 7 ounce with weight 211.24 grams. Sell price 5.82 dollars. Color tag YELLOW. Kcal/100g: 145.2736224, Kcal: 306.876, Fat (g): 15.499, Carbohydrates (g): 5.671, Sugars (g): 0.307, Protein (g): 34.92."
   },
   {
-    "id": "food_15653.4_886721416036",
+    "id": "food_15653_4_886721416036",
     "recipe_number": "15653.4",
     "recipe_name": "Canteen BMW: Chicken Enchilada Suizas",
     "short_name": "chicken enchilada suizas",
@@ -1320,7 +1320,7 @@
     "embedding_text": "Recipe Canteen BMW: Chicken Enchilada Suizas. Short name chicken enchilada suizas. Station Main Dish- Entr\u00e9e. Portion 8 ounce with weight 226.796 grams. Sell price 5.82 dollars. Color tag YELLOW. Kcal/100g: 148.6199051, Kcal: 337.064, Fat (g): 16.101, Carbohydrates (g): 28.343, Sugars (g): 4.768, Protein (g): 21.983."
   },
   {
-    "id": "food_27288.20_194306148266",
+    "id": "food_27288_20_194306148266",
     "recipe_number": "27288.20",
     "recipe_name": "HC Honey Roasted Chicken",
     "short_name": "Honey Roasted Chicken",
@@ -1380,7 +1380,7 @@
     "embedding_text": "Recipe EUR: Carved Pork Loin. Short name Carved Pork Loin. Station Main Dish- Entr\u00e9e. Portion 6 oz portion with weight 169.137 grams. Sell price 6.23 dollars. Color tag YELLOW. Kcal/100g: 141.4261811, Kcal: 239.204, Fat (g): 11.538, Carbohydrates (g): 1.67, Sugars (g): 0.212, Protein (g): 32.405."
   },
   {
-    "id": "food_831.3_886721028253",
+    "id": "food_831_3_886721028253",
     "recipe_number": "831.3",
     "recipe_name": "Canteen: Roasted Pork Loin",
     "short_name": "Pork Roast",
@@ -1420,7 +1420,7 @@
     "embedding_text": "Recipe HC Honey Bourbon Pork Loin. Short name Honey Bourbon Pork Loin. Station Main Dish- Entr\u00e9e. Portion 6 oz portion with weight 188.984 grams. Sell price 6.23 dollars. Color tag YELLOW. Kcal/100g: 159.4007958, Kcal: 301.242, Fat (g): 11.317, Carbohydrates (g): 17.465, Sugars (g): 13.687, Protein (g): 24.747."
   },
   {
-    "id": "food_4573.9_886721414636",
+    "id": "food_4573_9_886721414636",
     "recipe_number": "4573.9",
     "recipe_name": "Canteen BMW: Fried Pork Chop",
     "short_name": "Fried Pork Chop",
@@ -1440,7 +1440,7 @@
     "embedding_text": "Recipe Canteen BMW: Fried Pork Chop. Short name Fried Pork Chop. Station Main Dish- Entr\u00e9e. Portion 1 serving(s) with weight 264.901 grams. Sell price 6.23 dollars. Color tag ORANGE. Kcal/100g: 192.3941397, Kcal: 509.654, Fat (g): 30.402, Carbohydrates (g): 29.61, Sugars (g): 0.329, Protein (g): 32.223."
   },
   {
-    "id": "food_81293.2_886721417217",
+    "id": "food_81293_2_886721417217",
     "recipe_number": "81293.2",
     "recipe_name": "Canteen BMW: Beef Bourguignon",
     "short_name": "beef bourguignon",
@@ -1460,7 +1460,7 @@
     "embedding_text": "Recipe Canteen BMW: Beef Bourguignon. Short name beef bourguignon. Station Main Dish- Entr\u00e9e. Portion 9 ounce with weight 303.366 grams. Sell price 6.43 dollars. Color tag YELLOW. Kcal/100g: 146.9782375, Kcal: 445.882, Fat (g): 17.721, Carbohydrates (g): 11.43, Sugars (g): 2.348, Protein (g): 53.957."
   },
   {
-    "id": "food_156268.1_886721372264",
+    "id": "food_156268_1_886721372264",
     "recipe_number": "156268.1",
     "recipe_name": "Canteen BMW: Traditional Beef Lasagna",
     "short_name": "Beef Lasagna",
@@ -1480,7 +1480,7 @@
     "embedding_text": "Recipe Canteen BMW: Traditional Beef Lasagna. Short name Beef Lasagna. Station Main Dish- Entr\u00e9e. Portion 9 oz portion with weight 270.22 grams. Sell price 6.43 dollars. Color tag YELLOW. Kcal/100g: 162.2559396, Kcal: 438.448, Fat (g): 22.718, Carbohydrates (g): 28.887, Sugars (g): 7.878, Protein (g): 28.514."
   },
   {
-    "id": "food_310.11_886721414612",
+    "id": "food_310_11_886721414612",
     "recipe_number": "310.11",
     "recipe_name": "Canteen BMW: Cubed Steak",
     "short_name": "Cubed Steak",
@@ -1500,7 +1500,7 @@
     "embedding_text": "Recipe Canteen BMW: Cubed Steak. Short name Cubed Steak. Station Main Dish- Entr\u00e9e. Portion 1 serving(s) with weight 339.663 grams. Sell price 6.43 dollars. Color tag YELLOW. Kcal/100g: 177.7641368, Kcal: 603.799, Fat (g): 23.971, Carbohydrates (g): 30.944, Sugars (g): 2.84, Protein (g): 62.347."
   },
   {
-    "id": "food_9013.6_886721414599",
+    "id": "food_9013_6_886721414599",
     "recipe_number": "9013.6",
     "recipe_name": "Canteen BMW: Country Fried Steak with Gravy",
     "short_name": "Country Fried Steak",
@@ -1680,7 +1680,7 @@
     "embedding_text": "Recipe Canteen BMW: Senfbraten (Mustard Gravy Pork Roast). Short name Senfbraten. Station German- Main. Portion 6 oz meat with weight 155.955 grams. Sell price 7.37 dollars. Color tag ORANGE. Kcal/100g: 215.5224263, Kcal: 336.118, Fat (g): 17.001, Carbohydrates (g): 3.354, Sugars (g): 0.782, Protein (g): 40.127."
   },
   {
-    "id": "food_179391.2_886721415442",
+    "id": "food_179391_2_886721415442",
     "recipe_number": "179391.2",
     "recipe_name": "Canteen BMW: Senfbraten, pork butt",
     "short_name": "Senfbraten",
@@ -1700,7 +1700,7 @@
     "embedding_text": "Recipe Canteen BMW: Senfbraten, pork butt. Short name Senfbraten. Station German- Main. Portion 6 ounce with weight 179.669 grams. Sell price 7.37 dollars. Color tag ORANGE. Kcal/100g: 237.5017393, Kcal: 426.717, Fat (g): 25.548, Carbohydrates (g): 4.122, Sugars (g): 1.032, Protein (g): 42.485."
   },
   {
-    "id": "food_32229.18_886721415589",
+    "id": "food_32229_18_886721415589",
     "recipe_number": "32229.18",
     "recipe_name": "Canteen BMW: Chicken, Broccoli, Alfredo Penne",
     "short_name": "Chicken, Broccoli, Alfredo Penne",
@@ -1720,7 +1720,7 @@
     "embedding_text": "Recipe Canteen BMW: Chicken, Broccoli, Alfredo Penne. Short name Chicken, Broccoli, Alfredo Penne. Station Italian- Entr\u00e9e. Portion 18 oz portion with weight 535.957 grams. Sell price 8.31 dollars. Color tag GREEN. Kcal/100g: 113.5341081, Kcal: 608.494, Fat (g): 9.882, Carbohydrates (g): 94.078, Sugars (g): 4.385, Protein (g): 34.508."
   },
   {
-    "id": "food_49443.17_886721365846",
+    "id": "food_49443_17_886721365846",
     "recipe_number": "49443.17",
     "recipe_name": "Canteen BMW: Cajun Chicken Pasta",
     "short_name": "Cajun Chicken Pasta",
@@ -1780,7 +1780,7 @@
     "embedding_text": "Recipe HC Chicken with Pasta and Broccoli. Short name Chicken with Pasta and Broccoli. Station Italian- Entr\u00e9e. Portion 18 oz portion with weight 494.924 grams. Sell price 8.31 dollars. Color tag YELLOW. Kcal/100g: 126.6234816, Kcal: 626.69, Fat (g): 14.437, Carbohydrates (g): 71.641, Sugars (g): 5.279, Protein (g): 51.519."
   },
   {
-    "id": "food_153986.1_886721390992",
+    "id": "food_153986_1_886721390992",
     "recipe_number": "153986.1",
     "recipe_name": "Canteen BMW: Veggie Baked Ziti",
     "short_name": "Veggie Baked Ziti",
@@ -1800,7 +1800,7 @@
     "embedding_text": "Recipe Canteen BMW: Veggie Baked Ziti. Short name Veggie Baked Ziti. Station Italian- Entr\u00e9e. Portion 18 ounce with weight 510.291 grams. Sell price 8.31 dollars. Color tag YELLOW. Kcal/100g: 129.1533654, Kcal: 659.058, Fat (g): 21.279, Carbohydrates (g): 83.396, Sugars (g): 8.805, Protein (g): 35.1."
   },
   {
-    "id": "food_15935.11_886721384878",
+    "id": "food_15935_11_886721384878",
     "recipe_number": "15935.11",
     "recipe_name": "EUR: Whole Wheat Pasta Primavera",
     "short_name": "whole wheat pasta primavera",
@@ -1820,7 +1820,7 @@
     "embedding_text": "Recipe EUR: Whole Wheat Pasta Primavera. Short name whole wheat pasta primavera. Station Italian- Entr\u00e9e. Portion 16 ounce with weight 453.592 grams. Sell price 8.31 dollars. Color tag YELLOW. Kcal/100g: 130.4355015, Kcal: 591.645, Fat (g): 29.584, Carbohydrates (g): 74.653, Sugars (g): 8.071, Protein (g): 15.357."
   },
   {
-    "id": "food_23882.14_886721415565",
+    "id": "food_23882_14_886721415565",
     "recipe_number": "23882.14",
     "recipe_name": "Canteen BMW: Beef Fettuccine Alfredo",
     "short_name": "Beef Fettuccine Alfredo",
@@ -1840,7 +1840,7 @@
     "embedding_text": "Recipe Canteen BMW: Beef Fettuccine Alfredo. Short name Beef Fettuccine Alfredo. Station Italian- Entr\u00e9e. Portion 18 oz portion with weight 542.702 grams. Sell price 8.31 dollars. Color tag YELLOW. Kcal/100g: 133.295068, Kcal: 723.395, Fat (g): 26.818, Carbohydrates (g): 75.019, Sugars (g): 4.755, Protein (g): 42.11."
   },
   {
-    "id": "food_15931.15_886721009016",
+    "id": "food_15931_15_886721009016",
     "recipe_number": "15931.15",
     "recipe_name": "Canteen BMW: Beef Ziti with Ricotta",
     "short_name": "Beef Ziti with Ricotta",
@@ -1860,7 +1860,7 @@
     "embedding_text": "Recipe Canteen BMW: Beef Ziti with Ricotta. Short name Beef Ziti with Ricotta. Station Italian- Entr\u00e9e. Portion 18 oz portion with weight 556.775 grams. Sell price 8.31 dollars. Color tag YELLOW. Kcal/100g: 152.7723048, Kcal: 850.598, Fat (g): 48.809, Carbohydrates (g): 38.677, Sugars (g): 19.587, Protein (g): 61.946."
   },
   {
-    "id": "food_5706.1_886721417262",
+    "id": "food_5706_1_886721417262",
     "recipe_number": "5706.1",
     "recipe_name": "Canteen BMW: Spaghetti with Italian Sausage",
     "short_name": "Spaghetti with Italian Sausage",
@@ -1880,7 +1880,7 @@
     "embedding_text": "Recipe Canteen BMW: Spaghetti with Italian Sausage. Short name Spaghetti with Italian Sausage. Station Italian- Entr\u00e9e. Portion 18 ounce with weight 514.518 grams. Sell price 8.31 dollars. Color tag YELLOW. Kcal/100g: 162.0934545, Kcal: 834.0, Fat (g): 115.175, Carbohydrates (g): 382.996, Sugars (g): 52.314, Protein (g): 141.595."
   },
   {
-    "id": "food_83067.8_886721414650",
+    "id": "food_83067_8_886721414650",
     "recipe_number": "83067.8",
     "recipe_name": "Canteen BMW: Spaghetti and Meatballs",
     "short_name": "Spaghetti and Meatballs",
@@ -1920,7 +1920,7 @@
     "embedding_text": "Recipe HC Sausage and Pepper Pasta Supper. Short name Sausage and Pepper Pasta. Station Italian- Entr\u00e9e. Portion 18 ounce with weight 514.518 grams. Sell price 8.31 dollars. Color tag YELLOW. Kcal/100g: 169.5390637, Kcal: 872.309, Fat (g): 54.511, Carbohydrates (g): 56.008, Sugars (g): 8.776, Protein (g): 38.762."
   },
   {
-    "id": "food_47744.10_886721393955",
+    "id": "food_47744_10_886721393955",
     "recipe_number": "47744.10",
     "recipe_name": "Canteen BMW: Pizza Pasta - Sausage and Pepperoni",
     "short_name": "Sausage and Pepperoni Pizza Pasta",
@@ -1940,7 +1940,7 @@
     "embedding_text": "Recipe Canteen BMW: Pizza Pasta - Sausage and Pepperoni. Short name Sausage and Pepperoni Pizza Pasta. Station Italian- Entr\u00e9e. Portion 18 oz portion with weight 550.801 grams. Sell price 8.31 dollars. Color tag YELLOW. Kcal/100g: 173.0572385, Kcal: 953.201, Fat (g): 32.242, Carbohydrates (g): 121.232, Sugars (g): 10.218, Protein (g): 40.724."
   },
   {
-    "id": "food_39762.2_886721414667",
+    "id": "food_39762_2_886721414667",
     "recipe_number": "39762.2",
     "recipe_name": "Canteen BMW: Buffalo Blue Chicken Penne",
     "short_name": "buffalo blue chicken penne",
@@ -1960,7 +1960,7 @@
     "embedding_text": "Recipe Canteen BMW: Buffalo Blue Chicken Penne. Short name buffalo blue chicken penne. Station Italian- Entr\u00e9e. Portion 18 ounce with weight 517.349 grams. Sell price 8.31 dollars. Color tag ORANGE. Kcal/100g: NA, Kcal: 1041.988, Fat (g): 46.036, Carbohydrates (g): 108.071, Sugars (g): 3.715, Protein (g): 49.555."
   },
   {
-    "id": "food_47744.12_886721414643",
+    "id": "food_47744_12_886721414643",
     "recipe_number": "47744.12",
     "recipe_name": "Canteen BMW: Baked Ziti with Italian Sausage",
     "short_name": "Baked Ziti with Italian Sausage",
@@ -2000,7 +2000,7 @@
     "embedding_text": "Recipe Canteen Pad Thai. Short name Pad Thai. Station Asian- Entr\u00e9e. Portion 9 ounce with weight 255.146 grams. Sell price 8.8 dollars. Color tag GREEN. Kcal/100g: 122.1520228, Kcal: 311.666, Fat (g): 10.972, Carbohydrates (g): 37.951, Sugars (g): 13.474, Protein (g): 17.791."
   },
   {
-    "id": "food_10889.3_886721087786",
+    "id": "food_10889_3_886721087786",
     "recipe_number": "10889.3",
     "recipe_name": "Yan-in-a-Bowl: Kung Pao Chicken with Peanuts",
     "short_name": "Kung Pao Chicken with Peanuts",
@@ -2020,7 +2020,7 @@
     "embedding_text": "Recipe Yan-in-a-Bowl: Kung Pao Chicken with Peanuts. Short name Kung Pao Chicken with Peanuts. Station Asian- Entr\u00e9e. Portion 9 ounce with weight 255.146 grams. Sell price 8.8 dollars. Color tag YELLOW. Kcal/100g: 145.5151168, Kcal: 371.276, Fat (g): 21.964, Carbohydrates (g): 25.761, Sugars (g): 13.826, Protein (g): 20.111."
   },
   {
-    "id": "food_86422.2_886721334224",
+    "id": "food_86422_2_886721334224",
     "recipe_number": "86422.2",
     "recipe_name": "EUR: Gochujang Pork",
     "short_name": "gochujang pork",
@@ -2040,7 +2040,7 @@
     "embedding_text": "Recipe EUR: Gochujang Pork. Short name gochujang pork. Station Asian- Entr\u00e9e. Portion 9 ounce with weight 240.295 grams. Sell price 8.8 dollars. Color tag ORANGE. Kcal/100g: 229.9207224, Kcal: 552.488, Fat (g): 31.071, Carbohydrates (g): 1.936, Sugars (g): 0.973, Protein (g): 61.698."
   },
   {
-    "id": "food_135824.1_886721391210",
+    "id": "food_135824_1_886721391210",
     "recipe_number": "135824.1",
     "recipe_name": "Canteen BMW: Pineapple Beet Poke Bowl",
     "short_name": "Pineapple Beet Poke Bowl",
@@ -2100,7 +2100,7 @@
     "embedding_text": "Recipe HC BBQ Rice Bowl. Short name BBQ Rice Bowl. Station Vegetarian. Portion 1 serving(s) with weight 394.584 grams. Sell price 8.91 dollars. Color tag GREEN. Kcal/100g: 98.74171279, Kcal: 389.619, Fat (g): 8.139, Carbohydrates (g): 72.118, Sugars (g): 15.601, Protein (g): 8.667."
   },
   {
-    "id": "food_136285.7_886721415602",
+    "id": "food_136285_7_886721415602",
     "recipe_number": "136285.7",
     "recipe_name": "Canteen BMW: Greek Grain Bowl",
     "short_name": "Greek Grain Bowl",
@@ -2120,7 +2120,7 @@
     "embedding_text": "Recipe Canteen BMW: Greek Grain Bowl. Short name Greek Grain Bowl. Station Vegetarian. Portion 1 each with weight 465.698 grams. Sell price 8.91 dollars. Color tag GREEN. Kcal/100g: 114.6232108, Kcal: 533.798, Fat (g): 23.845, Carbohydrates (g): 66.463, Sugars (g): 10.737, Protein (g): 15.752."
   },
   {
-    "id": "food_167341.1_886721415497",
+    "id": "food_167341_1_886721415497",
     "recipe_number": "167341.1",
     "recipe_name": "Canteen BMW: Greek Chicken Salad",
     "short_name": "Greek Chicken Salad",
@@ -2140,7 +2140,7 @@
     "embedding_text": "Recipe Canteen BMW: Greek Chicken Salad. Short name Greek Chicken Salad. Station Chef's Table. Portion 1 serving(s) with weight 540.417 grams. Sell price 12.23 dollars. Color tag GREEN. Kcal/100g: 92.89604139, Kcal: 502.026, Fat (g): 28.322, Carbohydrates (g): 17.766, Sugars (g): 10.65, Protein (g): 47.319."
   },
   {
-    "id": "food_42120.2_886721381464",
+    "id": "food_42120_2_886721381464",
     "recipe_number": "42120.2",
     "recipe_name": "HC Lowcountry Shrimp and Grits",
     "short_name": "Lowcountry Shrimp & Grits",
@@ -2160,7 +2160,7 @@
     "embedding_text": "Recipe HC Lowcountry Shrimp and Grits. Short name Lowcountry Shrimp & Grits. Station Chef's Table. Portion 1 each with weight 318.778 grams. Sell price 12.23 dollars. Color tag GREEN. Kcal/100g: 93.52401985, Kcal: 298.134, Fat (g): 13.912, Carbohydrates (g): 24.182, Sugars (g): 3.782, Protein (g): 16.046."
   },
   {
-    "id": "food_30630.13_886721415480",
+    "id": "food_30630_13_886721415480",
     "recipe_number": "30630.13",
     "recipe_name": "Canteen BMW: Strawberry Fields Chicken Salad",
     "short_name": "Strawberry Fields Salad",
@@ -2180,7 +2180,7 @@
     "embedding_text": "Recipe Canteen BMW: Strawberry Fields Chicken Salad. Short name Strawberry Fields Salad. Station Chef's Table. Portion 1 each with weight 455.407 grams. Sell price 12.23 dollars. Color tag GREEN. Kcal/100g: 102.2371198, Kcal: 465.595, Fat (g): 26.81, Carbohydrates (g): 20.861, Sugars (g): 11.643, Protein (g): 40.564."
   },
   {
-    "id": "food_88850.4_886721236542",
+    "id": "food_88850_4_886721236542",
     "recipe_number": "88850.4",
     "recipe_name": "Canteen BMW: BBQ Chicken Salad",
     "short_name": "BBQ Chicken Salad",
@@ -2220,7 +2220,7 @@
     "embedding_text": "Recipe HC Cali Bowl. Short name Cali Bowl. Station Chef's Table. Portion 1 each with weight 379.536 grams. Sell price 12.23 dollars. Color tag GREEN. Kcal/100g: 109.2117744, Kcal: 414.498, Fat (g): 16.293, Carbohydrates (g): 58.56, Sugars (g): 13.457, Protein (g): 13.827."
   },
   {
-    "id": "food_12014.13_886721161332",
+    "id": "food_12014_13_886721161332",
     "recipe_number": "12014.13",
     "recipe_name": "EUR: Brown Fried Rice",
     "short_name": "fried brown rice",
@@ -2260,7 +2260,7 @@
     "embedding_text": "Recipe HC Savannah Red Rice. Short name Savannah Red Rice. Station Chef's Table. Portion 1 cup with weight 273.476 grams. Sell price NA dollars. Color tag GREEN. Kcal/100g: 103.2767044, Kcal: 282.437, Fat (g): 0.954, Carbohydrates (g): 62.231, Sugars (g): 8.463, Protein (g): 6.538."
   },
   {
-    "id": "food_4475.2_886721414490",
+    "id": "food_4475_2_886721414490",
     "recipe_number": "4475.2",
     "recipe_name": "Canteen BMW: Adobo Chicken",
     "short_name": "Adobo Chicken",
@@ -2280,7 +2280,7 @@
     "embedding_text": "Recipe Canteen BMW: Adobo Chicken. Short name Adobo Chicken. Station Chef's Table. Portion 6 oz meat with weight 188.994 grams. Sell price NA dollars. Color tag GREEN. Kcal/100g: 122.3028244, Kcal: 231.145, Fat (g): 10.785, Carbohydrates (g): 3.019, Sugars (g): 0.647, Protein (g): 31.558."
   },
   {
-    "id": "food_6921.3_886721257042",
+    "id": "food_6921_3_886721257042",
     "recipe_number": "6921.3",
     "recipe_name": "EUR: Marinated Flank Steak",
     "short_name": "marinated flank steak",
