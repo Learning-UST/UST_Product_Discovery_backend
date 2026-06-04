@@ -1,4 +1,4 @@
-from azure.cosmos import CosmosClient, exceptions
+from azure.cosmos import CosmosClient
 from utils.config import get_config_value
 
 

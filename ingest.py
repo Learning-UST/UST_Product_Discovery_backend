@@ -7,9 +7,9 @@ def load_json(file_path):
     with open(file_path, "r", encoding="utf-8-sig") as f:
         return json.load(f)
 
-promotions = load_json("promotion.json")
-products = load_json("products.json")
-inventory = load_json("inventory_new.json")
+promotions = load_json("data\promotion.json")
+products = load_json("new_products.json")
+inventory = load_json("new_inventory.json")
 
 # ---------- Helper: check promotion validity ----------
 def is_active(promo):
