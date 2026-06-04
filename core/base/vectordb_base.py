@@ -12,9 +12,6 @@ class BaseVectorDB(ABC):
     def vector_search(self, embedding: List[float], top_k: int = 5) -> List[Dict]:
         pass
 
-    @abstractmethod
-    def hybrid_search(self, query: str, embedding: List[float], top_k: int = 5) -> List[Dict]:
-        pass
 
     @abstractmethod
     def insert(self, docs: List[Dict]) -> Any:
