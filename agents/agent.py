@@ -32,6 +32,11 @@ class ShopilotAgent:
             return str(configured_symbol).strip()
         return "$" if self._price_source() == "US" else "INR "
 
+    def _format_currency(self, amount) -> str:
+        if amount is None:
+            return ""
+        return f"{self._currency_symbol()}{amount}"
+
     def _normalize_price_fields(self, item: dict) -> dict:
         if not isinstance(item, dict):
             return item
@@ -40,6 +45,7 @@ class ShopilotAgent:
         normalized = dict(item)
 
         if source == "US":
+            # Strictly use US fields for US price source to avoid INR amounts with USD symbol.
             price = normalized.get("us_price")
             discounted = normalized.get("us_discounted_price")
             if price is None:
@@ -53,13 +59,23 @@ class ShopilotAgent:
                 price = normalized.get("Price")
             if discounted is None:
                 discounted = normalized.get("Discounted_Price")
+            if price is None:
+                price = normalized.get("base_price")
+            if discounted is None:
+                discounted = normalized.get("final_price")
+
+        # Provide a single, source-correct pair of numeric fields for LLM grounding.
+        normalized["price"] = price
+        normalized["discounted_price"] = discounted
+
+        # Keep source context explicit for prompt consumer.
+        normalized["price_source"] = source
+        normalized["currency_symbol"] = self._currency_symbol()
 
         if price is not None:
-            normalized["display_price"] = price
+            normalized["display_price"] = self._format_currency(price)
         if discounted is not None:
-            normalized["display_discounted_price"] = discounted
-
-        normalized["currency_symbol"] = self._currency_symbol()
+            normalized["display_discounted_price"] = self._format_currency(discounted)
         return normalized
 
     def _normalize_result_payload(self, payload: dict) -> dict:
