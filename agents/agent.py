@@ -72,6 +72,29 @@ class ShopilotAgent:
             normalized["results"] = [self._normalize_price_fields(r) for r in results]
         return normalized
 
+    def _enforce_currency_symbol(self, text: str) -> str:
+        """Normalize any currency mentions in final text to the configured symbol."""
+        if not text:
+            return text
+
+        symbol = self._currency_symbol()
+        normalized = text
+
+        if symbol == "$":
+            normalized = re.sub(r"₹\s*", "$", normalized)
+            normalized = re.sub(r"\bINR\s*", "$", normalized, flags=re.IGNORECASE)
+            normalized = re.sub(r"\bUSD\s*", "$", normalized, flags=re.IGNORECASE)
+        else:
+            normalized = re.sub(r"\$\s*", "INR ", normalized)
+            normalized = re.sub(r"\bUSD\s*", "INR ", normalized, flags=re.IGNORECASE)
+            normalized = re.sub(r"₹\s*", "INR ", normalized)
+
+        # Collapse accidental repeated symbols introduced by replacements.
+        normalized = re.sub(r"\$\s*\$", "$", normalized)
+        normalized = re.sub(r"(?:INR\s*){2,}", "INR ", normalized)
+
+        return normalized
+
     def _extract_product_names(self, answer_text: str) -> list:
         """Extract only the product names that are actually visible in the final answer."""
         if not answer_text:
@@ -471,7 +494,7 @@ Instructions:
 - Include the full proper product name and description in the response, no need to show the origin or shelf life in the response.
 - Format the answer for readability using short bullet points.
 - Highlight key details in markdown bold: product name, price, and the key attribute asked by the user.
-- If the user asks for price, use display_price/display_discounted_price with currency_symbol.
+- For any price mention, always use display_price/display_discounted_price with currency_symbol from source data. Never mix currency symbols in one answer.
 - Be clear and concise
 - If no data → "No relevant product information found"
 """
@@ -487,6 +510,7 @@ Instructions:
                 ai_result,
                 cosmos_result,
             )
+            final_response = self._enforce_currency_symbol(final_response)
 
             logger.info(f"[STEP 5] Final Answer generated")
 
