@@ -79,6 +79,18 @@ def _normalize_product_id(raw_id):
 def health():
     return jsonify({"status": "ok", "message": "Shopilot Agent is running!"})
 
+
+@app.route("/api/cloud-provider", methods=["GET"])
+def get_cloud_provider_status():
+    """Expose active cloud provider state for frontend display/debugging."""
+    return jsonify({
+        "status": "ok",
+        "cloud_provider": get_active_cloud_provider(),
+        "default_from_env": normalize_cloud_provider(get_config_value("CLOUD_PROVIDER", "azure")),
+        "is_runtime_overridden": get_active_cloud_provider() != normalize_cloud_provider(get_config_value("CLOUD_PROVIDER", "azure")),
+        "supported_providers": ["azure", "aws"],
+    })
+
 @app.route("/api/set-agent", methods=["POST"])
 def set_agent():
     data = request.json or {}

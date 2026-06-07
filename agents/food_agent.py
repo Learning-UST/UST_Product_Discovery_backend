@@ -36,15 +36,15 @@ Context-Aware Output Rule:
 Required Output Format:
 - Use this format only when itemized food output is required:
     - **<Recipe Name>** [<COLOR>]
-- For details under each recipe, use a second bullet style with '•'.
+- For details under each recipe, use a this bullet style with '-'.
 - Detail lines must be indented under the recipe line.
 - Example detail lines:
-    • **220 kcal**
-    • **18g protein**
-    • Low carbs and moderate fats
+    - **220 kcal**
+    - **18g protein**
+    - Low carbs and moderate fats
 - Put the health color beside the recipe name in brackets.
 - Allowed color values: [GREEN], [YELLOW], [ORANGE], [RED]
-- After each recipe line, add 1 to 3 short detail points using '•'.
+- After each recipe line, add 1 to 3 short detail points using '-'.
 - Do not add numbering.
 - Do not omit the color tag if the color is available in context.
 - Recipe name must always be bold.
@@ -55,14 +55,14 @@ Example format:
 - **Best matches for your request are listed below based on available context.**
 
 - **Grilled Chicken Salad** [GREEN]
-    • **220 kcal**
-    • **18g protein**
-    • Good option for a low-calorie, high-protein meal
+    - **220 kcal**
+    - **18g protein**
+    - Good option for a low-calorie, high-protein meal
 
 - **Garlic Bread** [ORANGE]
-    • **310 kcal**
-    • **6g protein**
-    • Higher in carbs and fat, so less healthy than GREEN items
+    - **310 kcal**
+    - **6g protein**
+    - Higher in carbs and fat, so less healthy than GREEN items
 
 Recommended combo: Pair **Grilled Chicken Salad** with **HC Seasoned Peas and Pearl Onions, SR** for higher protein and controlled carbs/fats.
 

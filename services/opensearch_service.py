@@ -12,24 +12,36 @@ logger = get_logger()
 class OpenSearchService:
     def __init__(self):
         # ✅ Load config
-        self.host = get_config_value("AWS_OPENSEARCH_ENDPOINT")
+        self.host = (
+            get_config_value("AWS_OPENSEARCH_HOST")
+            or get_config_value("AWS_OPENSEARCH_ENDPOINT")
+            or get_config_value("OPENSEARCH_ENDPOINT")
+        )
+        self.host = str(self.host or "").replace("https://", "").replace("http://", "").rstrip("/")
         self.region = get_config_value("AWS_REGION") or "ap-northeast-1"
         self.index_name = get_config_value("AWS_OPENSEARCH_INDEX")
 
         self.access_key = get_config_value("AWS_ACCESS_KEY_ID")
         self.secret_key = get_config_value("AWS_SECRET_ACCESS_KEY")
+        self.username = get_config_value("AWS_OPENSEARCH_USERNAME")
+        self.password = get_config_value("AWS_OPENSEARCH_PASSWORD")
 
         self._validate_config()
 
-        # ✅ Create AWS session
-        session = boto3.Session(
-            aws_access_key_id=self.access_key,
-            aws_secret_access_key=self.secret_key,
-            region_name=self.region,
-        )
-
-        credentials = session.get_credentials()
-        auth = AWSV4SignerAuth(credentials, self.region, "es")
+        # ✅ Auth: prefer basic auth if provided, otherwise use SigV4
+        auth = None
+        if self.username and self.password:
+            auth = (self.username, self.password)
+        else:
+            session_kwargs = {"region_name": self.region}
+            if self.access_key and self.secret_key:
+                session_kwargs["aws_access_key_id"] = self.access_key
+                session_kwargs["aws_secret_access_key"] = self.secret_key
+            session = boto3.Session(**session_kwargs)
+            credentials = session.get_credentials()
+            if not credentials:
+                raise ValueError("Missing AWS credentials for OpenSearch SigV4 authentication")
+            auth = AWSV4SignerAuth(credentials, self.region, "es")
 
         # ✅ OpenSearch client
         self.client = OpenSearch(
@@ -52,13 +64,9 @@ class OpenSearchService:
         missing = []
 
         if not self.host:
-            missing.append("AWS_OPENSEARCH_ENDPOINT")
+            missing.append("AWS_OPENSEARCH_HOST or AWS_OPENSEARCH_ENDPOINT")
         if not self.index_name:
             missing.append("AWS_OPENSEARCH_INDEX")
-        if not self.access_key:
-            missing.append("AWS_ACCESS_KEY_ID")
-        if not self.secret_key:
-            missing.append("AWS_SECRET_ACCESS_KEY")
 
         if missing:
             raise ValueError(f"Missing configuration: {', '.join(missing)}")
@@ -155,7 +163,8 @@ class OpenSearchService:
             }
 
             response = self.client.search(index=self.index_name, body=body)
-            return response["hits"]["hits"]
+            hits = response.get("hits", {}).get("hits", [])
+            return [self._format_result(hit.get("_source", {}), hit.get("_id")) for hit in hits]
 
         except Exception as e:
             logger.error(f"❌ Search failed: {e}")
@@ -179,11 +188,48 @@ class OpenSearchService:
             }
 
             response = self.client.search(index=self.index_name, body=body)
-            return response["hits"]["hits"]
+            hits = response.get("hits", {}).get("hits", [])
+            return [self._format_result(hit.get("_source", {}), hit.get("_id")) for hit in hits]
 
         except Exception as e:
             logger.error(f"❌ Vector search failed: {e}")
             return []
+
+    def _format_result(self, r, record_id=None):
+        return {
+            "id": r.get("id") or record_id,
+            "product_id": r.get("product_id") or r.get("Product_Id"),
+            "name": r.get("name") or r.get("Name"),
+            "brand": r.get("brand") or r.get("Brand"),
+            "category": r.get("category") or r.get("Category"),
+            "description": r.get("description") or r.get("Description"),
+            "price": r.get("price") or r.get("Price"),
+            "us_price": r.get("us_price") or r.get("US_Price"),
+            "discounted_price": r.get("discounted_price") or r.get("Discounted_Price"),
+            "us_discounted_price": r.get("us_discounted_price") or r.get("US_Discounted_Price"),
+            "stock": r.get("stock") or r.get("Quantity"),
+            "store_id": r.get("store_id"),
+            "image_url": r.get("image_url"),
+            "country_of_origin": r.get("country_of_origin") or r.get("Country_Of_Origin"),
+            "shelf_life": r.get("shelf_life") or r.get("Shelf_Life"),
+            "promotion": {
+                "name": r.get("promotion_name") or r.get("Promotion_Name"),
+                "discount_percentage": r.get("discount_percentage") or r.get("Discount_Percentage"),
+            }
+            if (r.get("promotion_name") or r.get("Promotion_Name"))
+            else None,
+            "metadata": {
+                "veg": r.get("veg") or r.get("Veg"),
+                "age_restricted": r.get("age_restricted"),
+                "color": r.get("color") or r.get("Colour"),
+                "nutrition": r.get("nutrition") or r.get("Nutritional_Facts"),
+                "ingredients": r.get("ingredients") or r.get("Ingredients"),
+                "allergens": r.get("allergens") or r.get("Allergens"),
+                "health_labels": r.get("health_labels") or r.get("Health_Labels"),
+                "serving_size": r.get("serving_size") or r.get("Serving_Size"),
+            },
+            "upc": r.get("upc") or r.get("UPC"),
+        }
 
     # ------------------------------------------------------------------
     # INDEX SCHEMA (FOOD / PRODUCT)

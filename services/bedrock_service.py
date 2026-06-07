@@ -25,13 +25,12 @@ class BedrockLLMService:
         self.profile_arn = get_config_value("AWS_BEDROCK_INFERENCE_PROFILE_ARN")
         self._validate_config()
 
-        # ✅ Bedrock runtime client
-        self.runtime_client = boto3.client(
-            "bedrock-runtime",
-            aws_access_key_id=self.access_key,
-            aws_secret_access_key=self.secret_key,
-            region_name=self.region,
-        )
+        # ✅ Bedrock runtime client (supports either explicit keys or ambient IAM role/profile)
+        client_kwargs = {"region_name": self.region}
+        if self.access_key and self.secret_key:
+            client_kwargs["aws_access_key_id"] = self.access_key
+            client_kwargs["aws_secret_access_key"] = self.secret_key
+        self.runtime_client = boto3.client("bedrock-runtime", **client_kwargs)
 
         logger.info("✅ BedrockLLMService initialized")
 
@@ -43,16 +42,10 @@ class BedrockLLMService:
 
         if not self.region:
             missing.append("AWS_REGION")
-        if not self.model_id:
-            missing.append("AWS_BEDROCK_CHAT_MODEL")
         if not self.embedding_model_id:
             missing.append("AWS_BEDROCK_EMBEDDING_MODEL")
-        if not self.access_key:
-            missing.append("AWS_ACCESS_KEY_ID")
-        if not self.secret_key:
-            missing.append("AWS_SECRET_ACCESS_KEY")
-        if not self.profile_arn:
-            missing.append("AWS_BEDROCK_INFERENCE_PROFILE_ARN")
+        if not self.model_id and not self.profile_arn:
+            missing.append("AWS_BEDROCK_CHAT_MODEL or AWS_BEDROCK_INFERENCE_PROFILE_ARN")
         if missing:
             raise ValueError(f"Missing AWS Bedrock configuration: {', '.join(missing)}")
 
@@ -64,8 +57,9 @@ class BedrockLLMService:
         Generic Bedrock invocation wrapper
         """
         try:
+            target_model_id = model_id or self.profile_arn or self.model_id
             response = self.runtime_client.invoke_model(
-                modelId=self.profile_arn,
+                modelId=target_model_id,
                 contentType="application/json",
                 accept="application/json",
                 body=json.dumps(payload),
@@ -81,7 +75,7 @@ class BedrockLLMService:
     # ------------------------------------------------------------------
     # CHAT / GENERATION
     # ------------------------------------------------------------------
-    def generate(self, user_prompt: str, system_prompt: str = SYSTEM_PROMPT) -> str:
+    def generate(self, system_prompt: str, user_prompt: str) -> str:
         """
         Chat completion using Bedrock (Anthropic format)
         """
@@ -114,9 +108,68 @@ class BedrockLLMService:
         Converts user natural query into structured search query
         """
         return self.generate(
-            user_prompt=user_input,
             system_prompt=QUERY_BUILDER_SYSTEM_PROMPT,
+            user_prompt=user_input,
         )
+
+    def query_builder(self, message: str, content: str = "") -> dict:
+        """Provider-neutral query builder result compatible with existing tool chain."""
+        text = str(message or "").strip()
+        lower = text.lower()
+
+        table = "products"
+        if any(word in lower for word in ["promotion", "offer", "discount"]):
+            table = "promotion"
+        elif any(word in lower for word in ["stock", "inventory", "quantity"]):
+            table = "inventory"
+        elif any(word in lower for word in ["shelf", "layout", "row"]):
+            table = "layout"
+
+        regex_filter = {"$regex": text, "$options": "i"} if text else {"$exists": True}
+        table_filters = {
+            "products": {
+                "$or": [
+                    {"Name": regex_filter},
+                    {"name": regex_filter},
+                    {"Brand": regex_filter},
+                    {"brand": regex_filter},
+                    {"Category": regex_filter},
+                    {"category": regex_filter},
+                    {"Description": regex_filter},
+                    {"description": regex_filter},
+                ]
+            },
+            "inventory": {
+                "$or": [
+                    {"upc": regex_filter},
+                    {"UPC": regex_filter},
+                    {"store_id": regex_filter},
+                ]
+            },
+            "promotion": {
+                "$or": [
+                    {"Promotion_Name": regex_filter},
+                    {"Scope_Value": regex_filter},
+                ]
+            },
+            "layout": {
+                "$or": [
+                    {"id": regex_filter},
+                    {"shelf_id": regex_filter},
+                    {"shelf_name": regex_filter},
+                ]
+            },
+        }
+
+        mongo_filter = table_filters.get(table, table_filters["products"])
+
+        return {
+            "status": "success",
+            "table": table,
+            "query": "SELECT * FROM c",
+            "parameters": [],
+            "mongo_filter": mongo_filter,
+        }
 
     # ------------------------------------------------------------------
     # EMBEDDINGS
@@ -149,3 +202,7 @@ class BedrockLLMService:
         except Exception as e:
             logger.error(f"❌ Embedding generation failed: {e}")
             raise
+
+    def get_embedding(self, text: str) -> List[float]:
+        embeddings = self.get_embeddings([text])
+        return embeddings[0] if embeddings else []
