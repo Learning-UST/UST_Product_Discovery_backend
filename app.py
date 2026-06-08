@@ -28,7 +28,19 @@ CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
 _active_cloud_provider = normalize_cloud_provider(get_config_value("CLOUD_PROVIDER", "azure"))
 _active_services = None
-food_agent = FoodAgent()
+food_agent = None
+
+
+def _get_food_agent():
+    """Lazy-init food agent so core app routes keep working even if food backends fail."""
+    global food_agent
+    if food_agent is None:
+        try:
+            food_agent = FoodAgent()
+        except Exception as exc:
+            logger.exception(f"FoodAgent initialization failed: {exc}")
+            food_agent = None
+    return food_agent
 
 
 def _configure_services(cloud_provider):
@@ -62,7 +74,15 @@ def _bind_request_services():
 
 
 def _clean_query(q):
-    return q.strip().rstrip(string.punctuation).strip() if q else q
+    if not q:
+        return q
+
+    normalized = str(q)
+    # Normalize smart apostrophes/quotes from mobile keyboards.
+    normalized = normalized.replace("\u2019", "'").replace("\u2018", "'")
+    normalized = normalized.replace("\u201c", '"').replace("\u201d", '"')
+
+    return normalized.strip().rstrip(string.punctuation).strip()
 
 
 def _normalize_product_id(raw_id):
@@ -130,7 +150,7 @@ def search():
 @app.route("/api/chat", methods=["POST"])
 def chat():
     data = request.json
-    query = data.get("query")
+    query = _clean_query(data.get("query"))
     history = data.get("messages")
     # embedding = get_embedding(query)
     # docs = ai_search.search_text(query, top_k=3)
@@ -350,10 +370,21 @@ def get_shelf_qr(shelf_id):
 @app.route("/api/chat-food", methods=["POST"])
 def chat_food():
     data = request.json
-    query = data.get("query")
+    query = _clean_query(data.get("query"))
     history = data.get("messages")
+    active_food_agent = _get_food_agent()
+    if active_food_agent is None:
+        return jsonify({
+            "status": "error",
+            "message": "Food service is currently unavailable",
+            "query": query,
+            "answer": "Food service is currently unavailable.",
+            "sources": [],
+            "recipe_ids": [],
+            "recipe_colors": []
+        }), 503
     # Use food agent with agentic flow, but only food index (no Cosmos)
-    answer, docs, mentioned_records = food_agent.chat_agentic(query=query, history=history)
+    answer, docs, mentioned_records = active_food_agent.chat_agentic(query=query, history=history)
     recipe_ids = []
     recipe_colors = []
     seen = set()

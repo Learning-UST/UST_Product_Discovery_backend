@@ -201,7 +201,12 @@ class FoodAgent:
         self.retriever = FoodSearchService()
         self.llm = OpenAIService()
         self.query_rewriter = QueryRewriter()
-        self.cosmos_service = FoodCosmosService()
+        self.cosmos_service = None
+        try:
+            self.cosmos_service = FoodCosmosService()
+        except Exception as exc:
+            logger.exception(f"FoodCosmosService initialization failed: {exc}")
+            self.cosmos_service = None
 
     # ✅ QUERY BUILDER
     def query_builder(self, message: str, content: str = "") -> dict:
@@ -252,7 +257,7 @@ class FoodAgent:
         logger.info(f"Generated Cosmos Query: {cosmos_query}")
 
         # 4. Execute Cosmos Query
-        if cosmos_query.get("status") == "success":
+        if cosmos_query.get("status") == "success" and self.cosmos_service is not None:
             result = self.cosmos_service.query_executor(cosmos_query)
         else:
             result = {"results": []}
