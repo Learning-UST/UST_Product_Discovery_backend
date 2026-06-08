@@ -37,6 +37,38 @@ class ShopilotAgent:
             return ""
         return f"{self._currency_symbol()}{amount}"
 
+    def _detect_response_focus(self, query: str) -> str:
+        text = str(query or "").lower()
+
+        if any(keyword in text for keyword in ["ingredient", "ingridient", "ingredients", "what's in", "what is in"]):
+            return "ingredients"
+        if any(keyword in text for keyword in ["price", "cost", "mrp", "rate", "discount"]):
+            return "price"
+        if any(keyword in text for keyword in ["allergen", "allergy"]):
+            return "allergens"
+        if any(keyword in text for keyword in ["nutrition", "calorie", "protein", "fat", "carb", "sugar", "sodium"]):
+            return "nutrition"
+        if any(keyword in text for keyword in ["preservative", "preservatives"]):
+            return "preservatives"
+        if any(keyword in text for keyword in ["serving size", "portion", "size"]):
+            return "serving_size"
+        if any(keyword in text for keyword in ["healthy", "best", "recommend", "option", "snack", "suggest"]):
+            return "recommendation"
+        return "general"
+
+    def _build_focus_instruction(self, focus: str) -> str:
+        instructions = {
+            "ingredients": "The user is asking specifically for ingredients. Answer primarily with the ingredient list. Do not include price, nutrition, preservatives, allergens, or description unless needed for one short clarification.",
+            "price": "The user is asking specifically about price. Answer with only the relevant price and discounted price if available. Do not include ingredients, nutrition, or other product details unless explicitly requested.",
+            "allergens": "The user is asking specifically about allergens. Answer with only the allergen information and the product name. Do not include unrelated product details unless explicitly requested.",
+            "nutrition": "The user is asking specifically about nutrition. Answer only with the requested nutrition details and the product name. Do not include price or unrelated product details unless explicitly requested.",
+            "preservatives": "The user is asking specifically about preservatives. Answer only with preservatives and the product name. Do not include unrelated product details unless explicitly requested.",
+            "serving_size": "The user is asking specifically about serving size or portion. Answer only with serving size related information and the product name. Do not include unrelated product details unless explicitly requested.",
+            "recommendation": "The user is asking for recommendations or comparison. Provide concise comparison-focused output and include only the fields needed to justify the recommendation.",
+            "general": "Answer only what is needed for the user's specific question. Do not dump every available field by default.",
+        }
+        return instructions.get(focus, instructions["general"])
+
     def _normalize_price_fields(self, item: dict) -> dict:
         if not isinstance(item, dict):
             return item
@@ -452,6 +484,8 @@ class ShopilotAgent:
         history = history or []
         logger.info(f"Conversation history length: {len(history)}")
         try:
+            response_focus = self._detect_response_focus(message)
+
             # ✅ STEP 1: Rewrite user query (context aware)
             rewritten_query = self.rewriter.rewrite(message, history)
             logger.info(f"[STEP 1] Rewritten Query: {rewritten_query}")
@@ -507,11 +541,12 @@ Instructions:
 - I also need a comma separated list of product names used in the answer. This will be used to identify source records for UPC extraction. Include complete product names exactly as present in source data. Name this list as products(parameter).
 - Use product names exactly as present in source data. Do not paraphrase or rename product names. Include the full product name as present in the source, even if it's long. This is important for accurate product identification.
 - Prioritize accurate product info
-- Include the full proper product name and description in the response, no need to show the origin or shelf life in the response.
+- Include the product name in the response. Include description only if it helps answer the specific question.
 - Format the answer for readability using short bullet points.
 - Highlight key details in markdown bold: product name, price, and the key attribute asked by the user.
 - For any price mention, always use display_price/display_discounted_price with currency_symbol from source data. Never mix currency symbols in one answer.
 - Be clear and concise
+- {self._build_focus_instruction(response_focus)}
 - If no data → "No relevant product information found"
 """
 
