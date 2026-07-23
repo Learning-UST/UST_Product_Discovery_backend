@@ -207,7 +207,7 @@ class MongoService:
                 "layout": self.lay_ctr,
             }
             collection = collection_map.get(str(table_name).lower())
-            if not collection:
+            if collection is None:
                 raise ValueError(f"Invalid table_name: {table_name}")
 
             mongo_filter = query_payload.get("mongo_filter")

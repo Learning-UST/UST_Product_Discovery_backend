@@ -309,7 +309,7 @@ class CosmosService:
 
             container = container_map.get(table_name.lower())
 
-            if not container:
+            if container is None:
                 raise ValueError(f"Invalid table_name: {table_name}")
 
             # ✅ Extract query data

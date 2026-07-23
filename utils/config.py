@@ -13,9 +13,11 @@ def get_config_value(key, default=None):
     value = os.getenv(key)
     if value is None:
         return default
-    # Remove surrounding quotes if present
-    if isinstance(value, str) and value.startswith('"') and value.endswith('"'):
-        value = value[1:-1]
+    # Remove surrounding quotes if present (single or double).
+    if isinstance(value, str):
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
+            value = value[1:-1].strip()
     # Try to parse as list
     try:
         if value.startswith("[") and value.endswith("]"):
