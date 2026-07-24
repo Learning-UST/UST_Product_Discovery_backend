@@ -1,4 +1,5 @@
 import re
+import time
 from pymongo import MongoClient
 from utils.config import get_config_value
 
@@ -27,6 +28,116 @@ class MongoService:
         self.inv_ctr = self.db[self.inventory_collection]
         self.promo_ctr = self.db[self.promotion_collection]
         self.lay_ctr = self.db[self.layout_collection]
+        self._layout_shelf_index_cache = None
+        self._layout_shelf_index_ts = 0
+        self._layout_shelf_index_ttl_seconds = 300
+
+    def _normalize_product_name(self, value: str) -> str:
+        return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s]", "", str(value or "").lower())).strip()
+
+    def _extract_shelf_id(self, shelf_obj: dict) -> str:
+        if not isinstance(shelf_obj, dict):
+            return ""
+
+        direct = shelf_obj.get("shelf_id") or shelf_obj.get("shelfId") or shelf_obj.get("id")
+        if direct is not None and str(direct).strip() != "":
+            return str(direct).strip()
+
+        shelf_name = str(shelf_obj.get("shelf_name") or shelf_obj.get("name") or "").strip()
+        if shelf_name:
+            match = re.search(r"\d+", shelf_name)
+            if match:
+                return match.group(0)
+
+        return ""
+
+    def _build_layout_shelf_index(self):
+        now = time.time()
+        if (
+            isinstance(self._layout_shelf_index_cache, dict)
+            and (now - self._layout_shelf_index_ts) <= self._layout_shelf_index_ttl_seconds
+        ):
+            return self._layout_shelf_index_cache
+
+        index = {}
+        cursor = self.lay_ctr.find({}, {"_id": 0, "layout_plan": 1, "product_catalog": 1})
+
+        for doc in cursor:
+            layout_plan = doc.get("layout_plan") if isinstance(doc, dict) else None
+            if not isinstance(layout_plan, list):
+                continue
+
+            catalog = doc.get("product_catalog") if isinstance(doc, dict) else None
+            product_id_to_name = {}
+            if isinstance(catalog, list):
+                for item in catalog:
+                    if not isinstance(item, dict):
+                        continue
+                    product_id = str(item.get("id") or "").strip()
+                    product_name = str(item.get("name") or item.get("product_name") or "").strip()
+                    if product_id and product_name:
+                        product_id_to_name[product_id] = product_name
+
+            for shelf in layout_plan:
+                if not isinstance(shelf, dict):
+                    continue
+
+                shelf_id = self._extract_shelf_id(shelf)
+                if not shelf_id:
+                    continue
+
+                rows = shelf.get("rows") if isinstance(shelf.get("rows"), list) else []
+                for row in rows:
+                    if not isinstance(row, dict):
+                        continue
+                    products = row.get("products") if isinstance(row.get("products"), list) else []
+                    for placement in products:
+                        if not isinstance(placement, dict):
+                            continue
+
+                        product_name = str(placement.get("product_name") or placement.get("name") or "").strip()
+                        if not product_name:
+                            product_id = str(placement.get("product_id") or "").strip()
+                            product_name = product_id_to_name.get(product_id, "")
+                        if not product_name:
+                            continue
+
+                        normalized = self._normalize_product_name(product_name)
+                        if not normalized:
+                            continue
+
+                        if normalized not in index:
+                            index[normalized] = set()
+                        index[normalized].add(shelf_id)
+
+        normalized_index = {name: sorted(list(shelf_ids), key=lambda x: (len(str(x)), str(x))) for name, shelf_ids in index.items()}
+        self._layout_shelf_index_cache = normalized_index
+        self._layout_shelf_index_ts = now
+        return normalized_index
+
+    def get_shelf_ids_for_product_names(self, product_names):
+        if not isinstance(product_names, list):
+            return []
+
+        index = self._build_layout_shelf_index()
+        results = []
+        seen = set()
+
+        for raw_name in product_names:
+            name = str(raw_name or "").strip()
+            normalized = self._normalize_product_name(name)
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            shelf_ids = index.get(normalized, [])
+            results.append({
+                "name": name,
+                "normalized_name": normalized,
+                "shelf_ids": shelf_ids,
+                "shelf_id": shelf_ids[0] if shelf_ids else "",
+            })
+
+        return results
 
     def _price_source(self) -> str:
         source = str(get_config_value("PRICE_SOURCE", "NORMAL")).strip().upper()

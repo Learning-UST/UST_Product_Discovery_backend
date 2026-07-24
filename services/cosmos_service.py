@@ -1,4 +1,5 @@
 from azure.cosmos import CosmosClient
+import re
 from utils.config import get_config_value
 
 class CosmosService:
@@ -53,6 +54,25 @@ class CosmosService:
             or product.get("Price")
             or product.get("price")
         )
+
+    def _normalize_product_name(self, value: str) -> str:
+        return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s]", "", str(value or "").lower())).strip()
+
+    def _extract_shelf_id(self, shelf_obj: dict) -> str:
+        if not isinstance(shelf_obj, dict):
+            return ""
+
+        direct = shelf_obj.get("shelf_id") or shelf_obj.get("shelfId") or shelf_obj.get("id")
+        if direct is not None and str(direct).strip() != "":
+            return str(direct).strip()
+
+        shelf_name = str(shelf_obj.get("shelf_name") or shelf_obj.get("name") or "").strip()
+        if shelf_name:
+            match = re.search(r"\d+", shelf_name)
+            if match:
+                return match.group(0)
+
+        return ""
 
     def _format_product_info(self, data):
         product = data['product']
@@ -249,6 +269,76 @@ class CosmosService:
         if not data:
             return None
         return self._format_product_info(data[0])
+
+    def get_shelf_ids_for_product_names(self, product_names):
+        if not isinstance(product_names, list):
+            return []
+
+        query = "SELECT c.layout_plan, c.product_catalog FROM c"
+        docs = list(self.lay_ctr.query_items(query=query, enable_cross_partition_query=True))
+        index = {}
+
+        for doc in docs:
+            layout_plan = doc.get("layout_plan") if isinstance(doc, dict) else None
+            if not isinstance(layout_plan, list):
+                continue
+
+            catalog = doc.get("product_catalog") if isinstance(doc, dict) else None
+            product_id_to_name = {}
+            if isinstance(catalog, list):
+                for item in catalog:
+                    if not isinstance(item, dict):
+                        continue
+                    product_id = str(item.get("id") or "").strip()
+                    product_name = str(item.get("name") or item.get("product_name") or "").strip()
+                    if product_id and product_name:
+                        product_id_to_name[product_id] = product_name
+
+            for shelf in layout_plan:
+                if not isinstance(shelf, dict):
+                    continue
+
+                shelf_id = self._extract_shelf_id(shelf)
+                if not shelf_id:
+                    continue
+
+                rows = shelf.get("rows") if isinstance(shelf.get("rows"), list) else []
+                for row in rows:
+                    if not isinstance(row, dict):
+                        continue
+                    products = row.get("products") if isinstance(row.get("products"), list) else []
+                    for placement in products:
+                        if not isinstance(placement, dict):
+                            continue
+                        product_name = str(placement.get("product_name") or placement.get("name") or "").strip()
+                        if not product_name:
+                            product_id = str(placement.get("product_id") or "").strip()
+                            product_name = product_id_to_name.get(product_id, "")
+                        if not product_name:
+                            continue
+
+                        normalized = self._normalize_product_name(product_name)
+                        if not normalized:
+                            continue
+                        index.setdefault(normalized, set()).add(shelf_id)
+
+        results = []
+        seen = set()
+        for raw_name in product_names:
+            name = str(raw_name or "").strip()
+            normalized = self._normalize_product_name(name)
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            shelf_ids = sorted(list(index.get(normalized, set())), key=lambda x: (len(str(x)), str(x)))
+            results.append({
+                "name": name,
+                "normalized_name": normalized,
+                "shelf_ids": shelf_ids,
+                "shelf_id": shelf_ids[0] if shelf_ids else "",
+            })
+
+        return results
     
     def clean_product_results(self,data: list):
         """

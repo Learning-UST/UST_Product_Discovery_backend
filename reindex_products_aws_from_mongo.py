@@ -331,7 +331,10 @@ def _delete_index_if_exists(client, index_name: str):
 
 
 def _bulk_insert(client, index_name: str, docs: List[dict], batch_size: int):
-    for batch in _chunked(docs, batch_size):
+    total_success = 0
+    total_failed = 0
+
+    for batch_index, batch in enumerate(_chunked(docs, batch_size), start=1):
         actions = [
             {
                 "_index": index_name,
@@ -340,7 +343,22 @@ def _bulk_insert(client, index_name: str, docs: List[dict], batch_size: int):
             }
             for doc in batch
         ]
-        helpers.bulk(client, actions)
+
+        success, errors = helpers.bulk(
+            client,
+            actions,
+            raise_on_error=False,
+            stats_only=False,
+        )
+        failed = len(errors) if isinstance(errors, list) else 0
+        total_success += int(success or 0)
+        total_failed += failed
+
+        print(
+            f"Batch {batch_index}: attempted={len(actions)}, indexed={int(success or 0)}, failed={failed}"
+        )
+
+    return total_success, total_failed
 
 
 def _switch_alias(client, alias_name: str, target_index: str):
@@ -487,11 +505,21 @@ def main():
     _create_index(client, target_index, vector_dimension=vector_dimension)
 
     print(f"Bulk inserting {len(docs)} docs into {target_index}")
-    _bulk_insert(client, target_index, docs, batch_size=max(1, args.batch_size))
+    total_success, total_failed = _bulk_insert(
+        client,
+        target_index,
+        docs,
+        batch_size=max(1, args.batch_size),
+    )
+
+    # Force refresh so count reflects recently indexed documents.
+    client.indices.refresh(index=target_index)
 
     count_result = client.count(index=target_index)
     indexed_count = int(count_result.get("count", 0))
     print(f"Index count after load: {indexed_count}")
+
+    print(f"Bulk summary: attempted={len(docs)}, indexed={total_success}, failed={total_failed}")
 
     if indexed_count < len(docs):
         print("Warning: indexed count is lower than prepared docs.")

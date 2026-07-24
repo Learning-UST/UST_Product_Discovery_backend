@@ -336,6 +336,50 @@ def get_product(product_name):
         }), 404
 
 
+@app.route("/api/layout/shelf-lookup", methods=["POST"])
+def get_shelf_lookup_by_product_names():
+    data = request.json or {}
+    product_names = data.get("product_names")
+
+    if not isinstance(product_names, list):
+        return jsonify({
+            "status": "error",
+            "message": "product_names must be a list"
+        }), 400
+
+    try:
+        lookup_rows = g.database_service.get_shelf_ids_for_product_names(product_names)
+    except AttributeError:
+        lookup_rows = []
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Unable to resolve shelf lookup",
+            "error": str(e)
+        }), 500
+
+    shelves_by_name = {}
+    shelves_by_normalized_name = {}
+    for row in lookup_rows:
+        if not isinstance(row, dict):
+            continue
+        raw_name = str(row.get("name") or "").strip()
+        normalized_name = str(row.get("normalized_name") or "").strip()
+        shelf_id = str(row.get("shelf_id") or "").strip()
+        if raw_name and shelf_id:
+            shelves_by_name[raw_name] = shelf_id
+        if normalized_name and shelf_id:
+            shelves_by_normalized_name[normalized_name] = shelf_id
+
+    return jsonify({
+        "status": "success",
+        "count": len(lookup_rows),
+        "results": lookup_rows,
+        "shelves_by_name": shelves_by_name,
+        "shelves_by_normalized_name": shelves_by_normalized_name,
+    })
+
+
 
 @app.route("/api/generate-shelf-qr/<shelf_id>", methods=["GET"])
 def get_shelf_qr(shelf_id):
