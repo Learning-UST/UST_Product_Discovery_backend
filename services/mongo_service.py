@@ -309,6 +309,149 @@ class MongoService:
 
         return cleaned_results
 
+    def get_inventory_by_upcs(self, upcs: list) -> list:
+        """
+        Fetch inventory records for a list of UPCs (string or integer).
+        Used for direct price lookup from AI search results.
+        """
+        if not upcs:
+            return []
+
+        or_conditions = []
+        for upc in upcs:
+            upc_str = self._normalize_upc(upc)
+            if not upc_str:
+                continue
+            or_conditions.extend([{"upc": upc_str}, {"UPC": upc_str}])
+            try:
+                upc_int = int(upc_str)
+                or_conditions.extend([{"upc": upc_int}, {"UPC": upc_int}])
+            except (ValueError, TypeError):
+                pass
+
+        if not or_conditions:
+            return []
+
+        items = list(self.inv_ctr.find({"$or": or_conditions}, {"_id": 0}))
+        return self.clean_product_results(items)
+
+    def get_promotions_for_products(self, products: list) -> dict:
+        """
+        For a list of product dicts (with Brand, Category, Product_Id),
+        look up applicable promotions and return a map:
+        {
+          "product_id|brand|category": {
+            "promotion_name": "...",
+            "discount_percentage": 10,
+            "priority": 1
+          }
+        }
+        Used to enrich AI search results with promotion and discounted price info.
+        """
+        if not products:
+            return {}
+
+        try:
+            all_promos = list(self.promo_ctr.find({"isPromotion": True}, {"_id": 0}))
+            if not all_promos:
+                return {}
+
+            promo_map = {}
+
+            for product in products:
+                if not isinstance(product, dict):
+                    continue
+
+                brand = product.get("Brand") or product.get("brand")
+                category = product.get("Category") or product.get("category")
+                product_id = str(product.get("Product_Id") or product.get("product_id") or "")
+
+                # Find matching promotions for this product (by brand, category, or product_id)
+                applicable = []
+                for promo in all_promos:
+                    if not isinstance(promo, dict):
+                        continue
+                    scope_value = promo.get("Scope_Value")
+                    if scope_value in (brand, category, product_id):
+                        applicable.append(promo)
+
+                if applicable:
+                    # Sort by Priority (lowest = highest priority)
+                    applicable.sort(key=lambda x: x.get("Priority", 999))
+                    best_promo = applicable[0]
+
+                    # Use product_id as key, fallback to brand or category
+                    key = product_id or brand or category or ""
+                    if key:
+                        promo_map[key] = {
+                            "promotion_name": best_promo.get("Promotion_Name"),
+                            "discount_percentage": float(best_promo.get("Discount_Percentage") or 0),
+                            "priority": best_promo.get("Priority", 999),
+                        }
+
+            return promo_map
+
+        except Exception as e:
+            logger.error(f"Error fetching promotions: {e}")
+            return {}
+
+
+    def _enrich_products_with_inventory(self, products: list) -> list:
+        """Join inventory price/stock data onto product records by UPC."""
+        enriched = []
+        for product in products:
+            if not isinstance(product, dict):
+                enriched.append(product)
+                continue
+
+            upc = self._normalize_upc(
+                product.get("upc") or product.get("UPC")
+            )
+            inventory = None
+            if upc:
+                # Build query that matches both string and integer UPC values,
+                # since MongoDB is type-strict and UPC may be stored as either.
+                query_conditions = [
+                    {"upc": upc},
+                    {"UPC": upc},
+                    {"id": f"INV_{upc}"},
+                ]
+                try:
+                    upc_int = int(upc)
+                    query_conditions.extend([{"upc": upc_int}, {"UPC": upc_int}])
+                except (ValueError, TypeError):
+                    pass
+                inventory = self.inv_ctr.find_one(
+                    {"$or": query_conditions},
+                    {"_id": 0},
+                )
+
+            merged = dict(product)
+            if isinstance(inventory, dict):
+                # Merge inventory fields only when not already present on product
+                for key, value in inventory.items():
+                    if key not in merged or merged[key] is None:
+                        merged[key] = value
+
+                # Normalise to the lowercase field names the agent expects
+                if merged.get("price") is None:
+                    merged["price"] = inventory.get("Price") or inventory.get("price")
+                if merged.get("us_price") is None:
+                    merged["us_price"] = inventory.get("US_Price") or inventory.get("us_price")
+                if merged.get("discounted_price") is None:
+                    merged["discounted_price"] = (
+                        inventory.get("Discounted_Price") or inventory.get("discounted_price")
+                    )
+                if merged.get("us_discounted_price") is None:
+                    merged["us_discounted_price"] = (
+                        inventory.get("US_Discounted_Price") or inventory.get("us_discounted_price")
+                    )
+                if merged.get("quantity") is None:
+                    merged["quantity"] = inventory.get("Quantity") or inventory.get("quantity")
+
+            enriched.append(merged)
+        return enriched
+
     def query_executor(self, query_payload: dict, table_name: str = "products"):
         try:
             collection_map = {
@@ -326,6 +469,12 @@ class MongoService:
                 mongo_filter = {}
 
             items = list(collection.find(mongo_filter, {"_id": 0}).limit(20))
+
+            # Enrich product results with inventory price/stock data so the LLM
+            # can answer pricing questions even when querying the products table.
+            if str(table_name).lower() == "products":
+                items = self._enrich_products_with_inventory(items)
+
             return {
                 "status": "success",
                 "table": table_name,

@@ -125,43 +125,109 @@ class BedrockLLMService:
         elif any(word in lower for word in ["shelf", "layout", "row"]):
             table = "layout"
 
-        regex_filter = {"$regex": text, "$options": "i"} if text else {"$exists": True}
-        table_filters = {
-            "products": {
-                "$or": [
-                    {"Name": regex_filter},
-                    {"name": regex_filter},
-                    {"Brand": regex_filter},
-                    {"brand": regex_filter},
-                    {"Category": regex_filter},
-                    {"category": regex_filter},
-                    {"Description": regex_filter},
-                    {"description": regex_filter},
-                ]
-            },
-            "inventory": {
-                "$or": [
-                    {"upc": regex_filter},
-                    {"UPC": regex_filter},
-                    {"store_id": regex_filter},
-                ]
-            },
-            "promotion": {
-                "$or": [
-                    {"Promotion_Name": regex_filter},
-                    {"Scope_Value": regex_filter},
-                ]
-            },
-            "layout": {
-                "$or": [
-                    {"id": regex_filter},
-                    {"shelf_id": regex_filter},
-                    {"shelf_name": regex_filter},
-                ]
-            },
-        }
+        # ------------------------------------------------------------------
+        # Parse AI-search content to extract exact product names and UPCs.
+        # Using these gives precise MongoDB filters instead of matching the
+        # full query text (which never matches a product Name field).
+        # ------------------------------------------------------------------
+        names_from_content: list = []
+        upcs_from_content: list = []
 
-        mongo_filter = table_filters.get(table, table_filters["products"])
+        if content:
+            try:
+                parsed = json.loads(content)
+                ai_results = parsed.get("results") if isinstance(parsed, dict) else None
+                if isinstance(ai_results, list):
+                    for r in ai_results[:10]:
+                        if not isinstance(r, dict):
+                            continue
+                        name = r.get("name") or r.get("Name")
+                        upc = r.get("upc") or r.get("UPC")
+                        if name and str(name).strip():
+                            names_from_content.append(str(name).strip())
+                        if upc and str(upc).strip():
+                            upcs_from_content.append(str(upc).strip())
+            except Exception:
+                pass
+
+        # Build a targeted filter when AI-search content provides product identifiers.
+        if names_from_content or upcs_from_content:
+            import re as _re
+            or_conditions: list = []
+            for name in names_from_content:
+                pattern = _re.escape(name)
+                or_conditions.extend([
+                    {"Name": {"$regex": pattern, "$options": "i"}},
+                    {"name": {"$regex": pattern, "$options": "i"}},
+                ])
+            for upc_str in upcs_from_content:
+                or_conditions.extend([{"upc": upc_str}, {"UPC": upc_str}])
+                try:
+                    upc_int = int(upc_str)
+                    or_conditions.extend([{"upc": upc_int}, {"UPC": upc_int}])
+                except (ValueError, TypeError):
+                    pass
+
+            if table == "inventory":
+                # For inventory queries, filter by UPC directly.
+                inv_conditions: list = []
+                for upc_str in upcs_from_content:
+                    inv_conditions.extend([{"upc": upc_str}, {"UPC": upc_str}])
+                    try:
+                        upc_int = int(upc_str)
+                        inv_conditions.extend([{"upc": upc_int}, {"UPC": upc_int}])
+                    except (ValueError, TypeError):
+                        pass
+                mongo_filter = {"$or": inv_conditions} if inv_conditions else {"$or": or_conditions}
+            else:
+                mongo_filter = {"$or": or_conditions} if or_conditions else {}
+        else:
+            # Fallback: use individual words from the query as regex patterns so
+            # that the full query text doesn't kill match accuracy.
+            words = [w for w in text.split() if len(w) > 3]
+            if words:
+                # Prefer matching by product name keywords (last 5 meaningful words)
+                keyword_pattern = " ".join(words[-5:])
+                import re as _re
+                regex_filter = {"$regex": _re.escape(keyword_pattern), "$options": "i"}
+            else:
+                regex_filter = {"$regex": text, "$options": "i"} if text else {"$exists": True}
+
+            table_filters = {
+                "products": {
+                    "$or": [
+                        {"Name": regex_filter},
+                        {"name": regex_filter},
+                        {"Brand": regex_filter},
+                        {"brand": regex_filter},
+                        {"Category": regex_filter},
+                        {"category": regex_filter},
+                        {"Description": regex_filter},
+                        {"description": regex_filter},
+                    ]
+                },
+                "inventory": {
+                    "$or": [
+                        {"upc": regex_filter},
+                        {"UPC": regex_filter},
+                        {"store_id": regex_filter},
+                    ]
+                },
+                "promotion": {
+                    "$or": [
+                        {"Promotion_Name": regex_filter},
+                        {"Scope_Value": regex_filter},
+                    ]
+                },
+                "layout": {
+                    "$or": [
+                        {"id": regex_filter},
+                        {"shelf_id": regex_filter},
+                        {"shelf_name": regex_filter},
+                    ]
+                },
+            }
+            mongo_filter = table_filters.get(table, table_filters["products"])
 
         return {
             "status": "success",

@@ -7,7 +7,7 @@ import os
 import re
 from difflib import SequenceMatcher
 from agents.query_rewriter import QueryRewriter
-from agents.tool_registry import ai_search_tool, cosmos_query_tool
+from agents.tool_registry import ai_search_tool, cosmos_query_tool, price_enrichment_tool, promotion_enrichment_tool
 from services.openai_service import OpenAIService
 from agent.llm_service import LLMService
 from utils.logger import get_logger
@@ -496,6 +496,23 @@ class ShopilotAgent:
             logger.info(f"[STEP 2] AI Search Done")
             logger.info(f"AI Search Result: {json.dumps(ai_result)}")
 
+            # ✅ STEP 2.5: Direct inventory price enrichment by UPC (AWS)
+            # Mirrors Azure: extract UPCs from AI search results → query MongoDB
+            # inventory directly → merge Price/US_Price into ai_result items.
+            # This guarantees price fields are populated before the LLM prompt.
+            ai_result = price_enrichment_tool(ai_result)
+            ai_result = self._normalize_result_payload(ai_result)
+            logger.info(f"[STEP 2.5] Price Enrichment Done")
+
+            # ✅ STEP 2.75: Apply promotions and calculate discounted prices (AWS)
+            # Mirrors Azure: for each product, look up applicable promotions (by Brand/Category/Product_Id),
+            # calculate discounted_price = base_price * (1 - discount_percentage / 100),
+            # and add promotion_name and us_discounted_price to the result.
+            # This ensures discount info is available before the LLM prompt.
+            ai_result = promotion_enrichment_tool(ai_result)
+            ai_result = self._normalize_result_payload(ai_result)
+            logger.info(f"[STEP 2.75] Promotion Enrichment Done")
+
             # ✅ STEP 3: Rewrite for structured query (Cosmos)
 #             structured_prompt = f"""
 # Convert this user request into a structured product filter query:
@@ -544,7 +561,11 @@ Instructions:
 - Include the product name in the response. Include description only if it helps answer the specific question.
 - Format the answer for readability using short bullet points.
 - Highlight key details in markdown bold: product name, price, and the key attribute asked by the user.
-- For any price mention, always use display_price/display_discounted_price with currency_symbol from source data. Never mix currency symbols in one answer.
+- For any price mention:
+  * If a product has an active promotion (promotion field is not null), show both base price and discounted price: "Price: $X (base) → $Y (discounted) - Promotion: [promotion_name]"
+  * If no promotion, show base price only: "Price: $X"
+  * Always use us_discounted_price when available and promotion is active; otherwise use us_price
+  * Use display_price and display_discounted_price with currency_symbol from source data. Never mix currency symbols in one answer.
 - Be clear and concise
 - {self._build_focus_instruction(response_focus)}
 - If no data → "No relevant product information found"
